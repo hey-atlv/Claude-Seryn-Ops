@@ -1,0 +1,51 @@
+# Render Blueprint — Seryn Ops (Next.js 16 + Prisma 7 + Postgres)
+# Cách dùng: Render Dashboard → New → Blueprint → chọn repo này.
+# Render sẽ tự tạo Postgres "seryn-db", tự điền DATABASE_URL cho web service,
+# rồi chạy migrate deploy mỗi lần khởi động.
+#
+# CÁC BIẾN BÍ MẬT (sync: false) phải tự điền trong Dashboard sau khi tạo:
+#   ANTHROPIC_API_KEY, APP_PASSWORD, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+#   TELEGRAM_BOT_TOKEN
+# CÁC BIẾN CẤU HÌNH (điền theo domain thật của app trên Render):
+#   AUTH_ALLOWED_EMAILS, GOOGLE_LOGIN_REDIRECT_URI, TELEGRAM_CHAT_ID
+
+databases:
+  - name: seryn-db
+    plan: free
+    databaseName: seryn
+    user: seryn
+
+services:
+  - type: web
+    name: seryn-ops
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npx prisma migrate deploy && npx next start -p $PORT
+    envVars:
+      # Postgres — Render tự điền từ database bên trên
+      - key: DATABASE_URL
+        fromDatabase:
+          name: seryn-db
+          property: connectionString
+      - key: NODE_VERSION
+        value: "20"
+      # Bí mật — điền trong Dashboard (không commit)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      # Cấu hình — điền theo domain thật (vd https://seryn-ops.onrender.com)
+      - key: AUTH_ALLOWED_EMAILS
+        sync: false
+      - key: GOOGLE_LOGIN_REDIRECT_URI
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false

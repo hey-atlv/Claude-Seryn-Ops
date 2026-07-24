@@ -1,0 +1,250 @@
+// Seryn Marketing Ops — schema 3 database theo tài liệu thiết kế 15/07/2026
+// SQLite không hỗ trợ enum → các field phân loại dùng String,
+// validate ở tầng ứng dụng bằng src/lib/constants.ts (Zod ở API).
+// Mọi DateTime lưu UTC; hiển thị/tính toán quy về Asia/Ho_Chi_Minh (src/lib/timezone.ts).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Leader của các team trực tiếp. Team DIGITAL tách theo kênh nên có nhiều leader
+// (Facebook/Zalo/Google), các team khác 1 leader (channel = null).
+model Leader {
+  id         String  @id @default(cuid())
+  name       String
+  team       String // Team constant (xem TEAMS trong src/lib/constants.ts)
+  channel    String? // Channel constant cho Digital (FACEBOOK/ZALO/GOOGLE); null = team không chia kênh
+  chatHandle String? // Telegram — dùng ở Phase 2
+  tasks      Task[]
+}
+
+// DB1 — Tasks & Projects (16 field theo bảng 2.1)
+model Task {
+  id             String    @id @default(cuid())
+  title          String
+  type           String    @default("TASK") // TASK | PROJECT
+  team           String
+  leaderId       String?
+  leader         Leader?   @relation(fields: [leaderId], references: [id])
+  category       String? // Nhóm việc — validate theo CATEGORY_BY_TEAM
+  status         String    @default("TODO") // TODO | IN_PROGRESS | REVIEW | DONE
+  deadline       DateTime?
+  priority       String    @default("NORMAL") // NORMAL | HIGH | CRITICAL
+  revenueImpact  String    @default("MEDIUM") // HIGH | MEDIUM | LOW
+  lastUpdateAt   DateTime? // Update gần nhất (leader báo tiến độ)
+  lastUpdateNote String? // Nội dung update
+  outputLink     String? // Link output
+  note           String? // Ghi chú
+
+  // Sub-items: Project chia giai đoạn — xóa Project là xóa cả giai đoạn con
+  parentId String?
+  parent   Task?   @relation("SubItems", fields: [parentId], references: [id], onDelete: Cascade)
+  subItems Task[]  @relation("SubItems")
+
+  // Task sinh từ template lặp lại — recurrenceKey chống sinh trùng theo kỳ
+  recurringTemplateId String?
+  recurringTemplate   RecurringTemplate? @relation(fields: [recurringTemplateId], references: [id])
+  recurrenceKey       String? // VD "2026-W29" hoặc "2026-07"
+
+  // Đồng bộ 2 chiều Google Calendar — id event trên lịch phụ "Seryn Ops"
+  googleEventId String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@unique([recurringTemplateId, recurrenceKey])
+  @@index([status, deadline])
+  @@index([team, status])
+}
+
+// DB2 — Cross-team Dependencies (11 field theo bảng 2.2)
+model Dependency {
+  id              String    @id @default(cuid())
+  title           String
+  partner         String // TC_KT | CEC | SALE
+  direction       String    @default("TWO_WAY")
+  cooperationType String? // validate theo COOPERATION_BY_PARTNER
+  contactPerson   String? // Người đầu mối phía khối
+  mktTeam         String? // Team MKT liên quan
+  status          String    @default("WAITING") // WAITING | PROCESSING | CLOSED
+  followsProcess  Boolean   @default(true) // Đúng quy trình? (chủ yếu cho TC-KT)
+  slaDate         DateTime? // SLA / Ngày cần kết quả
+  note            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([partner, status])
+}
+
+// DB3 — Board Reporting Calendar (7 field theo bảng 2.3)
+model Report {
+  id            String    @id @default(cuid())
+  title         String
+  type          String // WEEKLY | MONTHLY
+  dueDate       DateTime?
+  status        String    @default("NOT_STARTED")
+  // Checklist 5 mục ban lãnh đạo luôn quan tâm
+  hasRevenue    Boolean   @default(false) // Doanh thu
+  hasRoas       Boolean   @default(false) // Tiến độ ROAS
+  hasData       Boolean   @default(false) // Tiến độ data
+  hasProjects   Boolean   @default(false) // Tiến độ dự án
+  hasRisks      Boolean   @default(false) // Rủi ro/tồn đọng
+  reportLink    String?
+  boardFeedback String? // Ghi chú từ lãnh đạo
+
+  // Sinh từ template lặp lại — chống tạo trùng theo kỳ (giống Task)
+  recurringTemplateId String?
+  recurringTemplate   RecurringTemplate? @relation(fields: [recurringTemplateId], references: [id])
+  recurrenceKey       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([recurringTemplateId, recurrenceKey])
+}
+
+// Template việc lặp lại (thay tính năng Repeat của Notion — bảng 2.1.f)
+model RecurringTemplate {
+  id               String   @id @default(cuid())
+  name             String
+  targetDb         String // TASK | REPORT
+  scheduleType     String // WEEKLY | MONTHLY | NONE
+  scheduleDay      Int? // WEEKLY: 1=thứ 2..7=CN · MONTHLY: ngày trong tháng
+  defaults         String // JSON — field điền sẵn khi sinh
+  subItemsTemplate String? // JSON array tên sub-item (cho khung Project)
+  active           Boolean  @default(true)
+  tasks            Task[]
+  reports          Report[]
+  createdAt        DateTime @default(now())
+}
+
+// SOP & tài liệu mẫu (Giai đoạn E) — nội dung markdown, editor đơn giản
+model SopDoc {
+  id        String   @id @default(cuid())
+  title     String
+  category  String? // nhóm tự do, VD "SOP" | "Template"
+  content   String // markdown
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Ghi chú cá nhân của Sếp — quick note, ghim lên đầu
+model PersonalNote {
+  id        String   @id @default(cuid())
+  content   String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pinned, updatedAt])
+}
+
+// Chỉ số tuần nhập tay — 1 dòng trên màn "Hôm nay" (phương án 15 phút)
+model WeeklyStat {
+  id        String   @id @default(cuid())
+  weekKey   String   @unique // "2026-W30" — khớp periodKey WEEKLY
+  revenue   Float? // doanh thu lũy kế (triệu đồng)
+  planPct   Float? // % đạt khoán
+  roas      Float?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Tài khoản Google đã kết nối (đồng bộ 2 chiều Calendar) — đúng 1 dòng, id cố định "default"
+model GoogleAccount {
+  id                String    @id @default("default")
+  email             String
+  refreshToken      String
+  accessToken       String?
+  accessTokenExpiry DateTime?
+  calendarId        String // id lịch phụ "Seryn Ops" đã tạo trên Google
+  syncToken         String? // Calendar API incremental sync — null = cần full sync
+  lastSyncAt        DateTime?
+  lastError         String?
+  sheetSources      GoogleSheetSource[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// Giai đoạn J2 — 1 sheet nguồn để đọc vào Inbox, nhiều dòng = nhiều sheet/link
+// cùng lúc, mỗi dòng tự theo dõi tiến độ đọc riêng (lastRow không chia sẻ).
+model GoogleSheetSource {
+  id         String        @id @default(cuid())
+  accountId  String        @default("default")
+  account    GoogleAccount @relation(fields: [accountId], references: [id])
+  label      String? // tên gợi nhớ, vd "Facebook Ads" — tùy chọn
+  sheetId    String // Spreadsheet ID
+  sheetRange String        @default("Sheet1") // tên sheet/tab
+  lastRow    Int           @default(0) // số dòng dữ liệu (không tính header) đã nhập vào Inbox
+  lastSyncAt DateTime?
+  lastError  String?
+  createdAt  DateTime      @default(now())
+
+  @@index([accountId])
+}
+
+// Trạng thái bot Telegram (Giai đoạn I) — đúng 1 dòng, id cố định "default".
+// lastShownJson: throttle map (giống filterDue lastShown) nhưng lưu DB vì bot
+// là tiến trình server, không có localStorage như chuông trong app.
+model TelegramState {
+  id            String   @id @default("default")
+  lastShownJson String? // JSON Record<string, number> — mốc gửi gần nhất theo NotifyItem.id
+  lastEodDate   String? // "yyyy-MM-dd" giờ VN — ngày cuối đã gửi tóm tắt cuối ngày
+  lastError     String?
+  updatedAt     DateTime @updatedAt
+}
+
+// Giai đoạn L1 — lịch sử phiên chat với Trợ lý AI. messagesJson lưu toàn bộ
+// mảng message (kể cả block tool_use/tool_result) — vừa là lịch sử hiển thị
+// lại UI, vừa là log mọi tool call (không cần bảng log riêng).
+model AiConversation {
+  id           String   @id @default(cuid())
+  title        String? // gợi nhớ, lấy từ câu hỏi đầu tiên
+  messagesJson String // JSON — mảng message dạng Anthropic MessageParam
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Backlog ý tưởng — chỗ ý tưởng sống trước khi đủ chín thành Project.
+// Chấm impact/effort (1..5) → xếp góc phần tư ở src/lib/idea-score.ts.
+// Duyệt (APPROVED → PROJECT) sinh 1 Task type=PROJECT, giữ id ở promotedTaskId.
+model Idea {
+  id           String  @id @default(cuid())
+  title        String
+  description  String?
+  status       String  @default("NEW") // NEW | VALIDATING | APPROVED | PROJECT | DROPPED
+  impact       Int     @default(3) // 1..5 — giá trị kỳ vọng
+  effort       Int     @default(3) // 1..5 — công sức/chi phí
+  team         String? // Team constant, null = chưa gán
+  source       String? // ý tưởng đến từ đâu (họp, leader, đối thủ…)
+  decisionNote String? // lý do duyệt/loại — để sau nhìn lại còn hiểu
+
+  // Task PROJECT sinh ra khi duyệt — giữ liên kết để không promote 2 lần
+  promotedTaskId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, updatedAt])
+}
+
+// Inbox — hàng chờ thu nhận đa nguồn (mục 3.1 kế hoạch)
+model InboxItem {
+  id          String   @id @default(cuid())
+  source      String // TELEGRAM | UPLOAD | PASTE | GSHEET | GCAL
+  rawText     String?
+  fileUrl     String?
+  fileType    String?
+  parsedDraft String? // JSON — bản nháp task do parser/AI đề xuất
+  status      String   @default("PENDING") // PENDING | CONVERTED | DISMISSED
+  createdAt   DateTime @default(now())
+
+  @@index([status, createdAt])
+}

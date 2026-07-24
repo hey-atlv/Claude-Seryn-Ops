@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/* Bật cứng dark mode dạng class: mọi biến thể `dark:` sẵn có trong app
+   (viết light-first) kích hoạt khi <html class="dark"> — không phụ thuộc
+   prefers-color-scheme của OS. Nhờ vậy toàn bộ trang cũ hiển thị dark mà
+   không phải sửa tay từng class. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ────────────────────────────────────────────────────────────────
+   Seryn Ops — DARK theme (tool nội bộ CMO Marketing).
+   Hướng đã duyệt 22/07/2026: dark trung tính, tương phản cao, tinh tế
+   (accent desaturated/mờ — KHÔNG vivid). Giữ tư duy hệ màu trạng thái
+   CÓ KỶ LUẬT: chỉ `critical` mới nổi nhất, còn lại hạ xuống cát/champagne.
+   Bảng màu chốt ở mockup scratchpad/seryn-dark-mockup.html.
+   ──────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Nền & bề mặt phân tầng */
+  --bg: #131315;
+  --panel: #1a1a1d;
+  --panel-2: #202024;
+  --panel-3: #26262b;
+  --border: #2d2d33;
+  --border-soft: #262629;
+
+  /* Chữ 4 cấp */
+  --text: #e9e9ec;
+  --text-dim: #adadb5;
+  --muted: #83838b;
+  --faint: #66666d;
+
+  /* Trạng thái — desaturated, mờ */
+  --critical: #d98a86; /* coral mềm — CHỈ việc critical thật */
+  --overdue: #cda06a; /* amber cát — quá hạn chưa critical */
+  --soon: #c9b184; /* champagne — sắp hạn / cần chú ý */
+  --good: #86bfa2; /* sage — đúng tiến độ / hoàn thành */
+  --idle: #83838b; /* xám ngả — im lặng / đang chờ */
+
+  /* Accent phụ */
+  --gold: #c9b184; /* champagne (accent chính của theme) */
+  --blue: #94a9cc; /* dusty blue */
+  --rose: #cf9aab; /* rose mềm */
+
+  /* Tương thích token cũ (một số nơi còn dùng --background/--foreground) */
+  --background: var(--bg);
+  --foreground: var(--text);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-be-vietnam);
+  --font-display: var(--font-cormorant);
+  --font-mono: var(--font-geist-mono);
+
+  /* Bề mặt — dùng trực tiếp qua utility: bg-panel, border-hair, text-dim… */
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+  --color-hair: var(--border);
+  --color-hair-soft: var(--border-soft);
+
+  --color-text: var(--text);
+  --color-dim: var(--text-dim);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+}
+
+@theme {
+  /* Thang brand Seryn — vẫn dùng cho accent navy/pastel khi cần */
+  --color-brand-50: #f2f5f8;
+  --color-brand-100: #e5ebf1;
+  --color-brand-200: #c8d4df;
+  --color-brand-300: #8fa8be;
+  --color-brand-400: #6e8ca6;
+  --color-brand-500: #4e6b85;
+  --color-brand-600: #35506b;
+  --color-brand-700: #1c2b3a;
+  --color-brand-800: #16222e;
+  --color-brand-900: #111a24;
+  --color-brand-950: #0b1118;
+
+  --color-gold: #c9b184;
+  --color-rose: #cf9aab;
+  --color-dusty: #94a9cc;
+
+  /* Hệ màu trạng thái — bản desaturated cho dark theme */
+  --color-critical: #d98a86;
+  --color-overdue: #cda06a;
+  --color-soon: #c9b184;
+  --color-good: #86bfa2;
+  --color-idle: #83838b;
+
+  /* Bóng đổ trên nền dark — mềm, sâu */
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 6px 28px rgba(0, 0, 0, 0.45);
+  --shadow-elevated: 0 12px 44px rgba(0, 0, 0, 0.55);
+
+  --radius-lg: 14px;
+  --radius-sm: 9px;
+
+  /* Remap đầu TỐI của thang zinc về đúng neutral theme, để mọi lớp
+     `dark:bg-zinc-900/800`, `dark:border-zinc-700`… của trang cũ khớp tông
+     với #131315 thay vì ngả xanh của zinc gốc. Đầu SÁNG (zinc-50..400)
+     giữ nguyên vì dùng làm chữ/muted trên nền dark vẫn đọc tốt. */
+  --color-zinc-950: #131315;
+  --color-zinc-900: #1a1a1d;
+  --color-zinc-800: #202024;
+  --color-zinc-700: #2d2d33;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100%;
+  background:
+    radial-gradient(900px 500px at 80% -10%, #1a1a1e 0%, transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-be-vietnam), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Heading cấp trang: sans đậm, siết chữ (theo mockup dark, không serif).
+   !important để thắng class font-bold/size có sẵn trong các page. */
+h1 {
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  color: #f4f4f6;
+}
+
+/* ── Card / panel dùng chung ──────────────────────────────────── */
+.app-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* Nhãn section: uppercase, giãn chữ */
+.section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(201, 177, 132, 0.28);
+  color: #f4f4f6;
+}
+
+/* Thanh cuộn hợp tông dark */
+* {
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 20px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a41;
+}
