@@ -12,7 +12,7 @@
 databases:
   - name: seryn-db
     plan: free
-    region: singapore
+    region: oregon
     databaseName: seryn
     user: seryn
 
@@ -21,7 +21,7 @@ services:
     name: seryn-ops
     runtime: node
     plan: free
-    region: singapore
+    region: oregon
     buildCommand: npm install && npm run build
     startCommand: npx prisma migrate deploy && npx next start -p $PORT
     envVars:
