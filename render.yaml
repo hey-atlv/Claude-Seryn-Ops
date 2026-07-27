@@ -12,6 +12,7 @@
 databases:
   - name: seryn-db
     plan: free
+    region: singapore
     databaseName: seryn
     user: seryn
 
