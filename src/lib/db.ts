@@ -1,4 +1,4 @@
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "@/generated/prisma/client";
 
 // Singleton PrismaClient — tránh tạo nhiều connection khi Next.js hot-reload ở dev.
@@ -7,10 +7,13 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 function createClient(): PrismaClient {
   let url = process.env.DATABASE_URL;
   if (!url) {
-    console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url Postgres mặc định cho build phase.");
-    url = "postgresql://postgres:postgres@localhost:5432/seryn";
+    console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url SQLite mặc định.");
+    url = process.platform === "win32" 
+      ? "file:C:/SerynOps/data/seryn.db" 
+      : "file:./seryn.db";
   }
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+  const adapter = new PrismaLibSql({ url });
+  return new PrismaClient({ adapter });
 }
 
 export const prisma = globalForPrisma.prisma ?? createClient();

@@ -36,7 +36,9 @@ function createClient(): PrismaClient {
   let url = process.env.DATABASE_URL;
   if (!url) {
     console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url SQLite mặc định.");
-    url = "file:C:/SerynOps/data/seryn.db";
+    url = process.platform === "win32" 
+      ? "file:C:/SerynOps/data/seryn.db" 
+      : "file:./seryn.db";
   }
   const adapter = new PrismaLibSql({ url });
   return new PrismaClient({ adapter });

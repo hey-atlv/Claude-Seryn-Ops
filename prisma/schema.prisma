@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 // Leader của các team trực tiếp. Team DIGITAL tách theo kênh nên có nhiều leader

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { type Channel } from "../src/lib/constants";
 
@@ -15,7 +15,7 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL chưa được cấu hình — kiểm tra file .env");
 }
-const adapter = new PrismaPg({ connectionString: databaseUrl });
+const adapter = new PrismaLibSql({ url: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
 const DIGITAL_LEADERS: Array<{ channel: Channel; name: string }> = [

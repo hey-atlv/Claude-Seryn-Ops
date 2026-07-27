@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { TEAMS, TEAM_LABELS, type Channel } from "../src/lib/constants";
 
@@ -10,7 +10,7 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error("DATABASE_URL chưa được cấu hình — kiểm tra file .env");
 }
-const adapter = new PrismaPg({ connectionString: databaseUrl });
+const adapter = new PrismaLibSql({ url: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 const DAY = 86_400_000;
 const inDays = (n: number) => new Date(Date.now() + n * DAY);
