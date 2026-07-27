@@ -37,6 +37,13 @@ yarn-error.log*
 # prisma generated client
 /src/generated
 
+# local SQLite/import data — không commit dữ liệu thật
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
 # claude local settings (cá nhân, không commit)
 .claude/settings.local.json
 

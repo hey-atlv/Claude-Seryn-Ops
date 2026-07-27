@@ -6,14 +6,17 @@ import { TEAMS, TEAM_LABELS, type Channel } from "../src/lib/constants";
 // Seed: 6 leader + 9 recurring templates (bảng 2.1.f + 2 template DB3)
 // + dữ liệu [DEMO] để kiểm tra formula/view. Idempotent: đã có leader thì bỏ qua.
 
-let databaseUrl = process.env.DATABASE_URL;
+let databaseUrl = process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL;
 if (!databaseUrl) {
   console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url SQLite mặc định.");
   databaseUrl = process.platform === "win32"
     ? "file:C:/SerynOps/data/seryn.db"
     : "file:./seryn.db";
 }
-const adapter = new PrismaLibSql({ url: databaseUrl });
+const adapter = new PrismaLibSql({
+  url: databaseUrl,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 const prisma = new PrismaClient({ adapter });
 const DAY = 86_400_000;
 const inDays = (n: number) => new Date(Date.now() + n * DAY);

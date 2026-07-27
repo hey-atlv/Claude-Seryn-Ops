@@ -4,21 +4,24 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { type Channel } from "../src/lib/constants";
 
 // Bổ sung/cập nhật 3 leader theo kênh cho Team Digital (Facebook/Zalo/Google) vào
-// DB THẬT. Chạy: `npx tsx scripts/them-leader-digital.mts` (dùng DATABASE_URL trong .env).
+// DB THẬT. Chạy: `npx tsx scripts/them-leader-digital.mts` (dùng Turso hoặc DATABASE_URL trong .env).
 //
 // Idempotent — chạy nhiều lần không tạo trùng:
 //  - Đã có leader cho kênh đó → chỉ cập nhật tên.
 //  - Chưa có → "nhận nuôi" leader placeholder cũ của Digital (channel = null) thành
 //    kênh này để KHÔNG bỏ mồ côi task đã gán cho placeholder; hết placeholder thì tạo mới.
 
-let databaseUrl = process.env.DATABASE_URL;
+let databaseUrl = process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL;
 if (!databaseUrl) {
   console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url SQLite mặc định.");
   databaseUrl = process.platform === "win32"
     ? "file:C:/SerynOps/data/seryn.db"
     : "file:./seryn.db";
 }
-const adapter = new PrismaLibSql({ url: databaseUrl });
+const adapter = new PrismaLibSql({
+  url: databaseUrl,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 const prisma = new PrismaClient({ adapter });
 
 const DIGITAL_LEADERS: Array<{ channel: Channel; name: string }> = [

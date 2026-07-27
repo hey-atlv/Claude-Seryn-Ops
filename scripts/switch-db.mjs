@@ -33,14 +33,17 @@ import { PrismaClient } from "@/generated/prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient(): PrismaClient {
-  let url = process.env.DATABASE_URL;
+  let url = process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL;
   if (!url) {
     console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url SQLite mặc định.");
     url = process.platform === "win32" 
       ? "file:C:/SerynOps/data/seryn.db" 
       : "file:./seryn.db";
   }
-  const adapter = new PrismaLibSql({ url });
+  const adapter = new PrismaLibSql({
+    url,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
   return new PrismaClient({ adapter });
 }
 
@@ -84,16 +87,16 @@ let digitalLeaderContent = fs.readFileSync(digitalLeaderPath, 'utf8');
 
 if (target === 'sqlite') {
   seedContent = seedContent.replace(/import\s*\{\s*PrismaPg\s*\}\s*from\s*"@prisma\/adapter-pg";/g, 'import { PrismaLibSql } from "@prisma/adapter-libsql";');
-  seedContent = seedContent.replace(/const\s+adapter\s+=\s+new\s+PrismaPg\s*\(\{\s*connectionString:\s*databaseUrl\s*\}\);/g, 'const adapter = new PrismaLibSql({ url: databaseUrl });');
+  seedContent = seedContent.replace(/const\s+adapter\s+=\s+new\s+PrismaPg\s*\(\{\s*connectionString:\s*databaseUrl\s*\}\);/g, 'const adapter = new PrismaLibSql({ url: databaseUrl, authToken: process.env.TURSO_AUTH_TOKEN });');
 
   digitalLeaderContent = digitalLeaderContent.replace(/import\s*\{\s*PrismaPg\s*\}\s*from\s*"@prisma\/adapter-pg";/g, 'import { PrismaLibSql } from "@prisma/adapter-libsql";');
-  digitalLeaderContent = digitalLeaderContent.replace(/const\s+adapter\s+=\s+new\s+PrismaPg\s*\(\{\s*connectionString:\s*databaseUrl\s*\}\);/g, 'const adapter = new PrismaLibSql({ url: databaseUrl });');
+  digitalLeaderContent = digitalLeaderContent.replace(/const\s+adapter\s+=\s+new\s+PrismaPg\s*\(\{\s*connectionString:\s*databaseUrl\s*\}\);/g, 'const adapter = new PrismaLibSql({ url: databaseUrl, authToken: process.env.TURSO_AUTH_TOKEN });');
 } else {
   seedContent = seedContent.replace(/import\s*\{\s*PrismaLibSql\s*\}\s*from\s*"@prisma\/adapter-libsql";/g, 'import { PrismaPg } from "@prisma/adapter-pg";');
-  seedContent = seedContent.replace(/const\s+adapter\s+=\s+new\s+PrismaLibSql\s*\(\{\s*url:\s*databaseUrl\s*\}\);/g, 'const adapter = new PrismaPg({ connectionString: databaseUrl });');
+  seedContent = seedContent.replace(/const\s+adapter\s+=\s+new\s+PrismaLibSql\s*\(\s*\{[\s\S]*?\}\s*\);/g, 'const adapter = new PrismaPg({ connectionString: databaseUrl });');
 
   digitalLeaderContent = digitalLeaderContent.replace(/import\s*\{\s*PrismaLibSql\s*\}\s*from\s*"@prisma\/adapter-libsql";/g, 'import { PrismaPg } from "@prisma/adapter-pg";');
-  digitalLeaderContent = digitalLeaderContent.replace(/const\s+adapter\s+=\s+new\s+PrismaLibSql\s*\(\{\s*url:\s*databaseUrl\s*\}\);/g, 'const adapter = new PrismaPg({ connectionString: databaseUrl });');
+  digitalLeaderContent = digitalLeaderContent.replace(/const\s+adapter\s+=\s+new\s+PrismaLibSql\s*\(\s*\{[\s\S]*?\}\s*\);/g, 'const adapter = new PrismaPg({ connectionString: databaseUrl });');
 }
 fs.writeFileSync(seedPath, seedContent, 'utf8');
 fs.writeFileSync(digitalLeaderPath, digitalLeaderContent, 'utf8');
