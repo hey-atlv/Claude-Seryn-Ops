@@ -33,9 +33,10 @@ import { PrismaClient } from "@/generated/prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient(): PrismaClient {
-  const url = process.env.DATABASE_URL;
+  let url = process.env.DATABASE_URL;
   if (!url) {
-    throw new Error("DATABASE_URL chưa được cấu hình — kiểm tra file .env");
+    console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url SQLite mặc định.");
+    url = "file:C:/SerynOps/data/seryn.db";
   }
   const adapter = new PrismaLibSql({ url });
   return new PrismaClient({ adapter });
@@ -55,9 +56,10 @@ import { PrismaClient } from "@/generated/prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient(): PrismaClient {
-  const url = process.env.DATABASE_URL;
+  let url = process.env.DATABASE_URL;
   if (!url) {
-    throw new Error("DATABASE_URL chưa được cấu hình — kiểm tra file .env");
+    console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url Postgres mặc định cho build phase.");
+    url = "postgresql://postgres:postgres@localhost:5432/seryn";
   }
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 }
