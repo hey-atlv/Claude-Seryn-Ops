@@ -10,6 +10,8 @@ export default defineConfig({
     seed: "tsx prisma/seed.mts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env.DATABASE_URL || (process.platform === "win32"
+      ? "file:C:/SerynOps/data/seryn.db"
+      : "file:./seryn.db"),
   },
 });

@@ -11,9 +11,12 @@ import { type Channel } from "../src/lib/constants";
 //  - Chưa có → "nhận nuôi" leader placeholder cũ của Digital (channel = null) thành
 //    kênh này để KHÔNG bỏ mồ côi task đã gán cho placeholder; hết placeholder thì tạo mới.
 
-const databaseUrl = process.env.DATABASE_URL;
+let databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL chưa được cấu hình — kiểm tra file .env");
+  console.warn("⚠️ DATABASE_URL chưa được cấu hình. Sử dụng url SQLite mặc định.");
+  databaseUrl = process.platform === "win32"
+    ? "file:C:/SerynOps/data/seryn.db"
+    : "file:./seryn.db";
 }
 const adapter = new PrismaLibSql({ url: databaseUrl });
 const prisma = new PrismaClient({ adapter });

@@ -7,7 +7,7 @@
     "dev:auto": "next dev",
     "postinstall": "prisma generate",
     "build": "next build",
-    "start": "next start",
+    "start": "npx prisma migrate deploy && npx prisma db seed && next start",
     "lint": "eslint",
     "test": "vitest run",
     "backup": "node scripts/backup-db.mjs",
