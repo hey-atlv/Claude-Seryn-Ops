@@ -51,7 +51,9 @@ export async function POST(req: NextRequest) {
         completedAt: input.status === "DONE" ? new Date() : null,
       },
     });
-    await syncTaskToCalendar(task.id);
+    syncTaskToCalendar(task.id).catch((err) =>
+      console.error("[GoogleSync] Sync task to calendar ngầm thất bại:", err)
+    );
     return ok(task, 201);
   } catch (error) {
     return handleApiError(error);

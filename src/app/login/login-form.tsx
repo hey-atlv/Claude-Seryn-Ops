@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 // Form đăng nhập — mật khẩu và/hoặc "Đăng nhập bằng Google". Server component cha
 // (page.tsx) quyết định hiển thị phương thức nào qua props theo cấu hình .env.
@@ -27,33 +26,40 @@ export default function LoginForm({
   passwordEnabled,
   googleEnabled,
 }: LoginFormProps) {
-  const router = useRouter();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(queryError());
+  const [success, setSuccess] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+    async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setSuccess(null);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       });
+      if (res.status === 500) {
+        setError("Máy chủ gặp sự cố khi xử lý yêu cầu (Lỗi 500)");
+        return;
+      }
       const data = (await res.json().catch(() => ({ success: false }))) as {
         success: boolean;
         error?: string;
       };
       if (data.success) {
-        router.replace(safeNext());
-        router.refresh();
+        setSuccess("Đăng nhập thành công! Đang chuyển hướng...");
+        setTimeout(() => {
+          window.location.href = safeNext();
+        }, 800);
         return;
       }
       setError(data.error ?? "Đăng nhập thất bại");
     } catch {
-      setError("Không kết nối được máy chủ");
+      setError("Không kết nối được máy chủ (treo hoặc offline)");
     } finally {
       setBusy(false);
     }
@@ -121,6 +127,8 @@ export default function LoginForm({
         )}
 
         {error && <p className="mt-3 text-[13px] text-red-400">{error}</p>}
+        {success && <p className="mt-3 text-[13px] text-emerald-400">{success}</p>}
+        {busy && !success && <p className="mt-3 text-[13px] text-zinc-400">Đang xác thực thông tin đăng nhập...</p>}
       </div>
     </div>
   );

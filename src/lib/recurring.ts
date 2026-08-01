@@ -17,24 +17,52 @@ export async function generateRecurring(now: Date = new Date()): Promise<number>
   const templates = await prisma.recurringTemplate.findMany({
     where: { active: true, scheduleType: { in: ["WEEKLY", "MONTHLY"] } },
   });
-  let created = 0;
 
-  for (const tpl of templates) {
+  // Lọc danh sách template thực sự đến hạn hôm nay
+  const dueTemplates = templates.filter(tpl => {
     const type = tpl.scheduleType as ScheduleType;
     const scheduleDay = tpl.scheduleDay ?? 1;
-    if (!isDue(type, scheduleDay, now)) continue;
+    return isDue(type, scheduleDay, now);
+  });
 
+  if (dueTemplates.length === 0) return 0;
+
+  const tplIds = dueTemplates.map(t => t.id);
+  const keys = dueTemplates.map(t => periodKey(t.scheduleType as ScheduleType, now));
+
+  // Query gom cụm một lần để tránh truy vấn DB lặp lại trong vòng lặp (N+1 query)
+  const [existingTasks, existingReports] = await Promise.all([
+    prisma.task.findMany({
+      where: {
+        recurringTemplateId: { in: tplIds },
+        recurrenceKey: { in: keys },
+      },
+      select: { recurringTemplateId: true, recurrenceKey: true },
+    }),
+    prisma.report.findMany({
+      where: {
+        recurringTemplateId: { in: tplIds },
+        recurrenceKey: { in: keys },
+      },
+      select: { recurringTemplateId: true, recurrenceKey: true },
+    }),
+  ]);
+
+  const taskExistsSet = new Set(existingTasks.map(t => `${t.recurringTemplateId}::${t.recurrenceKey}`));
+  const reportExistsSet = new Set(existingReports.map(r => `${r.recurringTemplateId}::${r.recurrenceKey}`));
+
+  let created = 0;
+
+  for (const tpl of dueTemplates) {
+    const type = tpl.scheduleType as ScheduleType;
+    const scheduleDay = tpl.scheduleDay ?? 1;
     const key = periodKey(type, now);
     const deadline = scheduledDeadlineVN(type, scheduleDay, now);
     const defaults = JSON.parse(tpl.defaults) as Record<string, string>;
 
     try {
       if (tpl.targetDb === "TASK") {
-        const exists = await prisma.task.findFirst({
-          where: { recurringTemplateId: tpl.id, recurrenceKey: key },
-          select: { id: true },
-        });
-        if (exists) continue;
+        if (taskExistsSet.has(`${tpl.id}::${key}`)) continue;
         const leader = defaults.team
           ? await prisma.leader.findFirst({ where: { team: defaults.team } })
           : null;
@@ -52,16 +80,13 @@ export async function generateRecurring(now: Date = new Date()): Promise<number>
             recurrenceKey: key,
           },
         });
-        await syncTaskToCalendar(newTask.id);
+        syncTaskToCalendar(newTask.id).catch((err) =>
+          console.error("[GoogleSync] Sync task to calendar ngầm thất bại:", err)
+        );
       } else {
-        const exists = await prisma.report.findFirst({
-          where: { recurringTemplateId: tpl.id, recurrenceKey: key },
-          select: { id: true },
-        });
-        if (exists) continue;
+        if (reportExistsSet.has(`${tpl.id}::${key}`)) continue;
         const p = vnParts(now);
         const w = isoWeek(p.year, p.month, p.day);
-        // Quy ước đặt tên DB3 theo phụ lục tài liệu
         const title =
           defaults.type === "MONTHLY"
             ? `Báo cáo tháng ${p.month}/${p.year}`
@@ -78,7 +103,6 @@ export async function generateRecurring(now: Date = new Date()): Promise<number>
       }
       created++;
     } catch (error: unknown) {
-      // P2002 = kỳ này vừa được sinh bởi request song song — bỏ qua an toàn
       if ((error as { code?: string })?.code !== "P2002") throw error;
     }
   }

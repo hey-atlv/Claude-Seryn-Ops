@@ -30,8 +30,13 @@ const teamLabel = (team: string) => TEAM_LABELS[team as Team] ?? team;
 
 export async function getTodayData(now: Date = new Date()): Promise<TodayData> {
   const generatedNow = await generateRecurring(now);
-  await pullCalendarChanges(); // Google → App, best-effort (xem google-sync.ts)
-  await pullSheetChanges(); // Google Sheets → Inbox, best-effort (J2, xem google-sheets.ts)
+  // Chạy ngầm không chặn luồng load trang chính để tối ưu tốc độ phản hồi
+  pullCalendarChanges().catch((err) =>
+    console.error("[GoogleSync] Kéo calendar changes ngầm thất bại:", err)
+  );
+  pullSheetChanges().catch((err) =>
+    console.error("[GoogleSheets] Kéo sheet changes ngầm thất bại:", err)
+  );
   const weekKey = periodKey("WEEKLY", now);
 
   const [tasks, staleDeps, stat] = await Promise.all([

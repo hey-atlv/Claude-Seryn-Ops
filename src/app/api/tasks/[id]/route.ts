@@ -60,7 +60,9 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
       where: { id },
       data: { ...input, completedAt },
     });
-    await syncTaskToCalendar(task.id);
+    syncTaskToCalendar(task.id).catch((err) =>
+      console.error("[GoogleSync] Sync task to calendar ngầm thất bại:", err)
+    );
     return ok(task);
   } catch (error) {
     return handleApiError(error);
