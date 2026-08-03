@@ -16,6 +16,7 @@ import {
   Menu,
   MoonStar,
   Plus,
+  Repeat,
   Settings,
   StickyNote,
   Sun,
@@ -44,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/assistant", label: "Trợ lý AI", icon: Bot },
   { href: "/import", label: "Import", icon: FileDown },
   { href: "/metrics", label: "Sức khỏe", icon: Activity },
+  { href: "/settings/recurring", label: "Việc định kỳ", icon: Repeat },
   { href: "/settings", label: "Cài đặt", icon: Settings },
 ];
 
@@ -57,6 +59,21 @@ function isActivePath(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
+/**
+ * Chỉ 1 mục được sáng. Với route lồng nhau (/settings/recurring nằm trong
+ * /settings) thì cả hai đều khớp prefix — chọn href dài nhất, tức mục cụ thể nhất.
+ */
+function activeHref(pathname: string, items: NavItem[]): string | null {
+  return items.reduce<string | null>(
+    (best, item) =>
+      isActivePath(pathname, item.href) &&
+      (best === null || item.href.length > best.length)
+        ? item.href
+        : best,
+    null,
+  );
+}
+
 function Brand() {
   return (
     <span className="flex select-none items-center gap-2.5 whitespace-nowrap text-[16px] font-bold tracking-wide text-[#f4f4f6]">
@@ -68,11 +85,12 @@ function Brand() {
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const current = activeHref(pathname, NAV_ITEMS);
 
   return (
     <nav className="flex flex-col gap-0.5">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = isActivePath(pathname, href);
+        const active = href === current;
         return (
           <Link
             key={href}
