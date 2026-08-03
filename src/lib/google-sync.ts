@@ -8,6 +8,7 @@ import {
   type OAuth2Client,
 } from "./google-auth";
 import {
+  eventSlotVN,
   eventTitleFor,
   fromGoogleEventDate,
   monthRangeVN,
@@ -127,10 +128,34 @@ export async function deleteTaskEvent(taskId: string): Promise<void> {
   }
 }
 
+/** Liệt kê toàn bộ event của 1 lịch trong khoảng thời gian, đã gộp hết các trang */
+async function listEventsIn(
+  cal: calendar_v3.Calendar,
+  calendarId: string,
+  timeMin: string,
+  timeMax: string,
+): Promise<calendar_v3.Schema$Event[]> {
+  const events: calendar_v3.Schema$Event[] = [];
+  let pageToken: string | undefined;
+  do {
+    const res = await cal.events.list({
+      calendarId,
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      pageToken,
+    });
+    events.push(...(res.data.items ?? []));
+    pageToken = res.data.nextPageToken ?? undefined;
+  } while (pageToken);
+  return events;
+}
+
 /** J3 — event Google KHÔNG do app tạo, trong 1 tháng, để Calendar view hiển thị
- * + nút "tạo task từ event". Chỉ lấy event cả ngày (all-day) vì task chỉ có 1
- * deadline không giờ, giống quy ước pullCalendarChanges(). Best-effort: trả mảng
- * rỗng khi chưa kết nối hoặc Google lỗi — route gọi hàm này không được phép hỏng. */
+ * + nút "tạo task từ event". Quét cả lịch chính ("primary" — nơi có lịch họp
+ * thật) lẫn lịch phụ "Seryn Ops", lấy cả event cả ngày lẫn event có giờ.
+ * Best-effort: trả mảng rỗng khi chưa kết nối, và một lịch lỗi không làm mất
+ * lịch còn lại — route gọi hàm này không được phép hỏng. */
 export async function listExternalCalendarEvents(
   year: number,
   month: number,
@@ -141,29 +166,30 @@ export async function listExternalCalendarEvents(
     const { account, cal } = ctx;
     const { timeMin, timeMax } = monthRangeVN(year, month);
 
+    const calendarIds = [...new Set(["primary", account.calendarId])];
     const events: calendar_v3.Schema$Event[] = [];
-    let pageToken: string | undefined;
-    do {
-      const res = await cal.events.list({
-        calendarId: account.calendarId,
-        timeMin,
-        timeMax,
-        singleEvents: true,
-        pageToken,
-      });
-      events.push(...(res.data.items ?? []));
-      pageToken = res.data.nextPageToken ?? undefined;
-    } while (pageToken);
+    for (const calendarId of calendarIds) {
+      try {
+        events.push(...(await listEventsIn(cal, calendarId, timeMin, timeMax)));
+      } catch (err) {
+        console.error(`[GoogleSync] đọc lịch "${calendarId}" thất bại:`, err);
+      }
+    }
 
     const result: ExternalCalendarEvent[] = [];
+    const seen = new Set<string>();
     for (const event of events) {
+      if (!event.id || seen.has(event.id)) continue; // 1 event có thể nằm ở cả 2 lịch
       if (event.status === "cancelled") continue;
       if (event.extendedProperties?.private?.[EXT_PROP_KEY]) continue; // event do app tạo — Calendar view đã vẽ từ task
-      if (!event.id || !event.start?.date) continue; // không phải all-day event — bỏ qua an toàn
+      const slot = eventSlotVN(event.start);
+      if (!slot) continue; // mốc thời gian lạ — bỏ qua an toàn
+      seen.add(event.id);
       result.push({
         id: event.id,
         title: event.summary || "(Không có tiêu đề)",
-        dateKey: event.start.date,
+        dateKey: slot.dateKey,
+        time: slot.time,
       });
     }
     return result;

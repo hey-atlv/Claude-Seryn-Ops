@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  eventSlotVN,
   eventTitleFor,
   fromGoogleEventDate,
   monthRangeVN,
@@ -53,6 +54,46 @@ describe("monthRangeVN", () => {
       timeMin: "2026-11-30T17:00:00.000Z",
       timeMax: "2026-12-31T17:00:00.000Z",
     });
+  });
+});
+
+describe("eventSlotVN", () => {
+  it("event cả ngày → giữ nguyên ngày Google gửi, không có giờ", () => {
+    expect(eventSlotVN({ date: "2026-08-04" })).toEqual({
+      dateKey: "2026-08-04",
+      time: null,
+    });
+  });
+
+  it("event có giờ, offset +07 → giữ đúng giờ VN", () => {
+    expect(eventSlotVN({ dateTime: "2026-08-04T10:00:00+07:00" })).toEqual({
+      dateKey: "2026-08-04",
+      time: "10:00",
+    });
+  });
+
+  it("event có giờ ghi bằng UTC → quy đổi sang giờ VN (+7)", () => {
+    expect(eventSlotVN({ dateTime: "2026-08-04T02:30:00Z" })).toEqual({
+      dateKey: "2026-08-04",
+      time: "09:30",
+    });
+  });
+
+  it("offset khác +07 vẫn quy đổi đúng, kể cả khi lệch sang ngày VN kế tiếp", () => {
+    // 20:00 ngày 03/08 giờ New York (UTC-4) = 07:00 ngày 04/08 giờ VN
+    expect(eventSlotVN({ dateTime: "2026-08-03T20:00:00-04:00" })).toEqual({
+      dateKey: "2026-08-04",
+      time: "07:00",
+    });
+  });
+
+  it("input rác hoặc thiếu mốc thời gian → null, không ném lỗi", () => {
+    expect(eventSlotVN(null)).toBeNull();
+    expect(eventSlotVN(undefined)).toBeNull();
+    expect(eventSlotVN({})).toBeNull();
+    expect(eventSlotVN({ date: null, dateTime: null })).toBeNull();
+    expect(eventSlotVN({ date: "04/08/2026" })).toBeNull();
+    expect(eventSlotVN({ dateTime: "hôm nào đó" })).toBeNull();
   });
 });
 
