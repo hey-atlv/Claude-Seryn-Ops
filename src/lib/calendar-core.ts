@@ -2,7 +2,8 @@ import { formatInTimeZone } from "date-fns-tz";
 import { VN_TZ } from "./timezone";
 
 // Logic thuần cho Calendar view (D6) — grid tháng theo lịch VN, tuần bắt đầu
-// thứ 2. Tách khỏi component để test được (giống recurring-core).
+// CHỦ NHẬT (khớp Google Calendar). Tách khỏi component để test được (giống
+// recurring-core).
 
 const DAY_MS = 86_400_000;
 
@@ -12,12 +13,12 @@ export interface CalendarDay {
   inMonth: boolean; // thuộc tháng đang xem hay là ngày đệm đầu/cuối
 }
 
-/** Grid tháng: mảng tuần × 7 ngày, đệm đủ tuần bằng ngày tháng kề. month 1-12. */
+/** Grid tháng: mảng tuần × 7 ngày (CN → T7), đệm đủ tuần bằng ngày tháng kề. month 1-12. */
 export function monthGridVN(year: number, month: number): CalendarDay[][] {
   const first = Date.UTC(year, month - 1, 1);
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  // getUTCDay: 0=CN..6=thứ 7 → offset so với thứ 2 đầu tuần
-  const offset = (new Date(first).getUTCDay() + 6) % 7;
+  // getUTCDay: 0=CN..6=thứ 7 — CN là đầu tuần nên dùng thẳng làm offset
+  const offset = new Date(first).getUTCDay();
   const weekCount = Math.ceil((offset + daysInMonth) / 7);
 
   const weeks: CalendarDay[][] = [];

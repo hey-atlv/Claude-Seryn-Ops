@@ -7,28 +7,34 @@ import {
 } from "../src/lib/calendar-core";
 
 describe("monthGridVN", () => {
-  it("tháng 7/2026 (bắt đầu thứ 4): đệm từ thứ 2 29/06, kết thúc 02/08", () => {
+  it("tháng 7/2026 (bắt đầu thứ 4): đệm từ CN 28/06, kết thúc 01/08", () => {
     const grid = monthGridVN(2026, 7);
     expect(grid).toHaveLength(5);
     expect(grid.every((w) => w.length === 7)).toBe(true);
-    expect(grid[0][0]).toEqual({ key: "2026-06-29", day: 29, inMonth: false });
-    expect(grid[0][2]).toEqual({ key: "2026-07-01", day: 1, inMonth: true });
-    expect(grid[4][6]).toEqual({ key: "2026-08-02", day: 2, inMonth: false });
+    expect(grid[0][0]).toEqual({ key: "2026-06-28", day: 28, inMonth: false });
+    expect(grid[0][3]).toEqual({ key: "2026-07-01", day: 1, inMonth: true });
+    expect(grid[4][6]).toEqual({ key: "2026-08-01", day: 1, inMonth: false });
   });
 
-  it("tháng 2/2027 (28 ngày, mở đầu đúng thứ 2): tròn 4 tuần không đệm", () => {
-    const grid = monthGridVN(2027, 2);
+  it("tháng 2/2026 (28 ngày, mở đầu đúng CN): tròn 4 tuần không đệm", () => {
+    const grid = monthGridVN(2026, 2);
     expect(grid).toHaveLength(4);
-    expect(grid[0][0]).toEqual({ key: "2027-02-01", day: 1, inMonth: true });
-    expect(grid[3][6]).toEqual({ key: "2027-02-28", day: 28, inMonth: true });
+    expect(grid[0][0]).toEqual({ key: "2026-02-01", day: 1, inMonth: true });
+    expect(grid[3][6]).toEqual({ key: "2026-02-28", day: 28, inMonth: true });
     expect(grid.flat().every((d) => d.inMonth)).toBe(true);
+  });
+
+  it("cột đầu của mọi tuần luôn là chủ nhật", () => {
+    for (const week of monthGridVN(2026, 8)) {
+      expect(new Date(`${week[0].key}T00:00:00Z`).getUTCDay()).toBe(0);
+    }
   });
 
   it("tháng 12 → tháng 1 đệm sang năm mới đúng", () => {
     const grid = monthGridVN(2026, 12);
     const last = grid.at(-1)!.at(-1)!;
-    // 31/12/2026 là thứ 5 → tuần cuối đệm tới CN 03/01/2027
-    expect(last).toEqual({ key: "2027-01-03", day: 3, inMonth: false });
+    // 31/12/2026 là thứ 5 → tuần cuối đệm tới thứ 7 02/01/2027
+    expect(last).toEqual({ key: "2027-01-02", day: 2, inMonth: false });
   });
 });
 

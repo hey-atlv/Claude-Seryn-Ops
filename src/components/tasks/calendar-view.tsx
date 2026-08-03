@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
 import {
   addMonths,
@@ -12,13 +12,18 @@ import {
 import type { ExternalCalendarEvent } from "@/lib/google-calendar-core";
 import type { TaskRow } from "@/lib/task-row";
 
-// D6 — Calendar tháng theo deadline (tự dựng grid cho nhẹ, tuần bắt đầu thứ 2, giờ VN)
-// J3 — thêm event Google Calendar KHÔNG do app tạo (chip viền đứt) + bấm để tạo
-// task từ event đó (prefill title/deadline, vẫn qua preview-confirm của TaskForm).
+// D6 — Calendar tháng theo deadline (tự dựng grid cho nhẹ, tuần bắt đầu CN, giờ VN)
+// J3 — thêm event Google Calendar KHÔNG do app tạo + bấm để tạo task từ event đó
+// (prefill title/deadline, vẫn qua preview-confirm của TaskForm).
+//
+// Ngôn ngữ hình ảnh mượn Google Calendar, đổ về bảng màu dark của theme:
+//   · task (chỉ có ngày, không giờ) = pill nền đặc, màu theo priority/status
+//   · event Google (có giờ) = chấm tròn + giờ + tiêu đề, nền trong suốt
+// Đúng cách Google phân biệt "all-day" với "timed", nên hai loại không lẫn nhau.
 
-const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const MAX_CHIPS_PER_DAY = 3;
-const MAX_EXTERNAL_CHIPS_PER_DAY = 2;
+const WEEKDAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+const MAX_TASK_CHIPS = 3;
+const MAX_EVENT_CHIPS = 2;
 
 interface CalendarViewProps {
   tasks: TaskRow[];
@@ -26,22 +31,29 @@ interface CalendarViewProps {
   onCreateFromEvent: (event: ExternalCalendarEvent) => void;
 }
 
-// Heatmap mật độ deadline: nền teal đậm dần theo số việc trong ngày
+// Nền ô theo mật độ deadline — giữ rất nhạt để không phá vẻ sạch kiểu Google
 function heatClass(count: number): string {
-  if (count >= 5) return "bg-brand-600/35 dark:bg-brand-400/30";
-  if (count >= 3) return "bg-brand-600/20 dark:bg-brand-400/18";
-  if (count >= 1) return "bg-brand-600/10 dark:bg-brand-400/10";
+  if (count >= 5) return "bg-gold/10";
+  if (count >= 3) return "bg-gold/6";
+  if (count >= 1) return "bg-gold/3";
   return "";
 }
 
+// Event cả ngày (time = null) lên đầu, phần còn lại theo giờ tăng dần ("HH:mm" so sánh chuỗi được)
+function byStartTime(a: ExternalCalendarEvent, b: ExternalCalendarEvent): number {
+  if (a.time === b.time) return 0;
+  if (a.time === null) return -1;
+  if (b.time === null) return 1;
+  return a.time.localeCompare(b.time);
+}
+
+// Pill task: nền mờ + chữ cùng tông (desaturated theo hướng dark đã duyệt),
+// KHÔNG dùng nền đặc bão hoà như Google bản sáng.
 function chipClass(task: TaskRow): string {
-  if (task.status === "DONE")
-    return "bg-zinc-100 text-zinc-400 line-through dark:bg-zinc-800 dark:text-zinc-500";
-  if (task.priority === "CRITICAL")
-    return "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300";
-  if (task.priority === "HIGH")
-    return "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300";
-  return "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300";
+  if (task.status === "DONE") return "bg-white/5 text-faint line-through";
+  if (task.priority === "CRITICAL") return "bg-critical/15 text-critical";
+  if (task.priority === "HIGH") return "bg-overdue/15 text-overdue";
+  return "bg-dusty/12 text-dusty";
 }
 
 export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewProps) {
@@ -75,6 +87,10 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
     for (const e of externalEvents) {
       map.set(e.dateKey, [...(map.get(e.dateKey) ?? []), e]);
     }
+    // Trong cùng 1 ngày: event cả ngày lên trước, còn lại xếp theo giờ bắt đầu
+    for (const [key, events] of map) {
+      map.set(key, [...events].sort(byStartTime));
+    }
     return map;
   }, [externalEvents]);
 
@@ -83,109 +99,137 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setYm((c) => addMonths(c.year, c.month, -1))}
-          className="rounded-md border border-zinc-300 px-2.5 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          ←
-        </button>
-        <span className="min-w-32 text-center text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-          Tháng {month}/{year}
-        </span>
-        <button
-          type="button"
-          onClick={() => setYm((c) => addMonths(c.year, c.month, 1))}
-          className="rounded-md border border-zinc-300 px-2.5 py-1 text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        >
-          →
-        </button>
+      {/* Thanh điều hướng theo thứ tự của Google: Hôm nay → ‹ › → tên tháng */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => setYm(currentMonthVN())}
-          className="ml-2 rounded-md px-2.5 py-1 text-sm font-medium text-brand-700 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-950/40"
+          className="rounded-full border border-hair px-3.5 py-1.5 text-[13px] font-medium text-dim transition-colors hover:bg-panel-2 hover:text-text"
         >
           Hôm nay
         </button>
-        <span className="ml-auto flex items-center gap-1 text-[11px] text-zinc-600 dark:text-zinc-400">
-          Mật độ deadline
-          <span className="h-3 w-3 rounded-sm bg-brand-600/10 dark:bg-brand-400/10" />
-          <span className="h-3 w-3 rounded-sm bg-brand-600/20 dark:bg-brand-400/18" />
-          <span className="h-3 w-3 rounded-sm bg-brand-600/35 dark:bg-brand-400/30" />
-          <span>1 → 5+ việc/ngày</span>
-        </span>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            aria-label="Tháng trước"
+            onClick={() => setYm((c) => addMonths(c.year, c.month, -1))}
+            className="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-panel-2 hover:text-text"
+          >
+            <ChevronLeft size={18} aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label="Tháng sau"
+            onClick={() => setYm((c) => addMonths(c.year, c.month, 1))}
+            className="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-panel-2 hover:text-text"
+          >
+            <ChevronRight size={18} aria-hidden />
+          </button>
+        </div>
+        <h2 className="ml-1 text-lg font-semibold tracking-tight text-text">
+          Tháng {month}, {year}
+        </h2>
+
+        <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-faint">
+          <span className="flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-good/80" aria-hidden />
+            Lịch Google
+          </span>
+          <span className="flex items-center gap-1">
+            Mật độ deadline
+            <span className="size-3 rounded-[3px] bg-gold/3" aria-hidden />
+            <span className="size-3 rounded-[3px] bg-gold/6" aria-hidden />
+            <span className="size-3 rounded-[3px] bg-gold/10" aria-hidden />
+            <span>1 → 5+ việc/ngày</span>
+          </span>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
-        <div className="min-w-[640px] overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="grid grid-cols-7 border-b border-zinc-200 text-center text-xs font-medium uppercase text-zinc-500 dark:border-zinc-800">
+        <div className="min-w-[720px] overflow-hidden rounded-lg border border-hair bg-panel">
+          <div className="grid grid-cols-7 border-b border-hair bg-panel-2/40 text-center text-[11px] font-semibold uppercase tracking-wider text-faint">
             {WEEKDAYS.map((d) => (
-              <div key={d} className="py-1.5">
+              <div key={d} className="py-2">
                 {d}
               </div>
             ))}
           </div>
           {grid.map((week, wi) => (
-            <div
-              key={wi}
-              className="grid grid-cols-7 border-b border-zinc-100 last:border-0 dark:border-zinc-800/60"
-            >
+            <div key={wi} className="grid grid-cols-7 border-b border-hair-soft last:border-b-0">
               {week.map((day) => {
                 const dayTasks = byDay.get(day.key) ?? [];
                 const dayEvents = byDayExternal.get(day.key) ?? [];
+                const hiddenTasks = dayTasks.slice(MAX_TASK_CHIPS);
+                const hiddenEvents = dayEvents.slice(MAX_EVENT_CHIPS);
+                const hiddenCount = hiddenTasks.length + hiddenEvents.length;
                 const isToday = day.key === todayKey;
                 return (
                   <div
                     key={day.key}
-                    className={`min-h-24 border-r border-zinc-100 p-1 last:border-0 dark:border-zinc-800/60 ${
-                      day.inMonth
-                        ? heatClass(dayTasks.length)
-                        : "bg-zinc-50/70 dark:bg-zinc-950/40"
-                    } ${isToday ? "ring-2 ring-inset ring-brand-600" : ""}`}
+                    className={`min-h-[116px] border-r border-hair-soft p-1.5 last:border-r-0 ${
+                      day.inMonth ? heatClass(dayTasks.length) : "bg-black/15"
+                    }`}
                   >
-                    <div
-                      className={`mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs ${
-                        isToday
-                          ? "bg-brand-600 font-bold text-white"
-                          : day.inMonth
-                            ? "font-medium text-zinc-700 dark:text-zinc-200"
-                            : "text-zinc-300 dark:text-zinc-600"
-                      }`}
-                    >
-                      {day.day}
+                    {/* Google đặt số ngày ở giữa đỉnh ô, hôm nay là vòng tròn đặc */}
+                    <div className="mb-1 flex justify-center">
+                      <span
+                        className={`grid h-6 min-w-6 place-items-center rounded-full px-1 text-[12px] ${
+                          isToday
+                            ? "bg-gold font-bold text-bg"
+                            : day.inMonth
+                              ? "font-medium text-dim"
+                              : "text-faint/60"
+                        }`}
+                      >
+                        {day.day}
+                      </span>
                     </div>
-                    {dayTasks.slice(0, MAX_CHIPS_PER_DAY).map((t) => (
+
+                    {dayTasks.slice(0, MAX_TASK_CHIPS).map((t) => (
                       <button
                         key={t.id}
                         type="button"
                         onClick={() => onEdit(t)}
                         title={t.title}
-                        className={`mb-0.5 block w-full truncate rounded px-1 py-0.5 text-left text-[10px] font-medium ${chipClass(t)}`}
+                        className={`mb-0.5 block w-full truncate rounded px-1.5 py-[3px] text-left text-[11px] font-medium transition-shadow hover:ring-1 hover:ring-inset hover:ring-white/15 ${chipClass(t)}`}
                       >
                         {t.title}
                       </button>
                     ))}
-                    {dayTasks.length > MAX_CHIPS_PER_DAY && (
-                      <p className="px-1 text-[10px] text-zinc-400">
-                        +{dayTasks.length - MAX_CHIPS_PER_DAY} việc nữa
-                      </p>
-                    )}
-                    {dayEvents.slice(0, MAX_EXTERNAL_CHIPS_PER_DAY).map((e) => (
+
+                    {dayEvents.slice(0, MAX_EVENT_CHIPS).map((e) => (
                       <button
                         key={e.id}
                         type="button"
                         onClick={() => onCreateFromEvent(e)}
-                        title={`${e.title} — bấm để tạo task từ event Google này`}
-                        className="mb-0.5 flex w-full items-center gap-1 truncate rounded border border-dashed border-zinc-300 px-1 py-0.5 text-left text-[10px] font-medium text-zinc-500 hover:border-brand-500 hover:text-brand-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-brand-400 dark:hover:text-brand-300"
+                        title={`${e.time ? `${e.time} — ` : ""}${e.title} — bấm để tạo task từ event Google này`}
+                        className="group mb-0.5 flex w-full items-center gap-1.5 rounded px-1.5 py-[3px] text-left text-[11px] text-dim transition-colors hover:bg-white/6 hover:text-text"
                       >
-                        <CalendarPlus size={10} strokeWidth={2.25} aria-hidden className="shrink-0" />
+                        <span
+                          className="size-1.5 shrink-0 rounded-full bg-good/80"
+                          aria-hidden
+                        />
+                        {e.time && (
+                          <span className="shrink-0 tabular-nums text-muted">
+                            {e.time}
+                          </span>
+                        )}
                         <span className="truncate">{e.title}</span>
+                        <CalendarPlus
+                          size={11}
+                          strokeWidth={2.25}
+                          aria-hidden
+                          className="ml-auto hidden shrink-0 text-gold group-hover:block"
+                        />
                       </button>
                     ))}
-                    {dayEvents.length > MAX_EXTERNAL_CHIPS_PER_DAY && (
-                      <p className="px-1 text-[10px] text-zinc-400">
-                        +{dayEvents.length - MAX_EXTERNAL_CHIPS_PER_DAY} event nữa
+
+                    {hiddenCount > 0 && (
+                      <p
+                        title={[...hiddenTasks.map((t) => t.title), ...hiddenEvents.map((e) => e.title)].join("\n")}
+                        className="px-1.5 pt-0.5 text-[11px] font-medium text-faint"
+                      >
+                        +{hiddenCount} nữa
                       </p>
                     )}
                   </div>
