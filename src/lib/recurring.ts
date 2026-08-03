@@ -13,6 +13,17 @@ import {
 // Sinh task/báo cáo định kỳ từ RecurringTemplate — idempotent theo (templateId, kỳ).
 // Được gọi mỗi lần mở Dashboard; unique constraint trong DB chặn race condition.
 
+/**
+ * Vi phạm unique constraint có được phép bỏ qua không. Prisma engine cũ trả
+ * P2002; driver adapter libsql (Turso) bọc thành P2039 kèm message SQLITE_CONSTRAINT
+ * — phải nhận cả hai, nếu không race lúc mở Dashboard song song sẽ sập trang.
+ */
+function isUniqueViolation(error: unknown): boolean {
+  const e = error as { code?: string; message?: string };
+  if (e?.code === "P2002") return true;
+  return e?.code === "P2039" && (e?.message ?? "").includes("UNIQUE constraint failed");
+}
+
 export async function generateRecurring(now: Date = new Date()): Promise<number> {
   const templates = await prisma.recurringTemplate.findMany({
     where: { active: true, scheduleType: { in: ["WEEKLY", "MONTHLY"] } },
@@ -103,7 +114,8 @@ export async function generateRecurring(now: Date = new Date()): Promise<number>
       }
       created++;
     } catch (error: unknown) {
-      if ((error as { code?: string })?.code !== "P2002") throw error;
+      // Kỳ này vừa được sinh bởi request song song — bỏ qua an toàn
+      if (!isUniqueViolation(error)) throw error;
     }
   }
   return created;
