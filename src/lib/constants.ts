@@ -149,6 +149,39 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   SUBMITTED: "Đã nộp",
 };
 
+// Template việc lặp lại (bảng 2.1.f) — quản lý ở Cài đặt › Việc định kỳ
+export const RECURRING_TARGETS = ["TASK", "REPORT"] as const;
+export type RecurringTarget = (typeof RECURRING_TARGETS)[number];
+export const RECURRING_TARGET_LABELS: Record<RecurringTarget, string> = {
+  TASK: "Công việc",
+  REPORT: "Báo cáo",
+};
+
+// NONE = không tự sinh, chỉ làm khung cho nút "Tạo từ template" ở trang Công việc
+export const RECURRING_SCHEDULES = ["WEEKLY", "MONTHLY", "NONE"] as const;
+export type RecurringSchedule = (typeof RECURRING_SCHEDULES)[number];
+export const RECURRING_SCHEDULE_LABELS: Record<RecurringSchedule, string> = {
+  WEEKLY: "Hằng tuần",
+  MONTHLY: "Hằng tháng",
+  NONE: "Không tự sinh",
+};
+
+/** Thứ trong tuần ISO-8601 (1 = thứ 2 … 7 = chủ nhật) — khớp scheduleDay của lịch tuần */
+export const ISO_WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
+export const ISO_WEEKDAY_LABELS: Record<number, string> = {
+  1: "Thứ 2",
+  2: "Thứ 3",
+  3: "Thứ 4",
+  4: "Thứ 5",
+  5: "Thứ 6",
+  6: "Thứ 7",
+  7: "Chủ nhật",
+};
+
+export const MONTH_DAY_MIN = 1;
+export const MONTH_DAY_MAX = 31; // ngày vượt số ngày của tháng sẽ lùi về ngày cuối tháng
+export const RECURRING_MAX_SUB_ITEMS = 20;
+
 // Inbox
 export const INBOX_SOURCES = [
   "TELEGRAM",

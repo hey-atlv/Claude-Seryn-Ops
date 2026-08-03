@@ -7,8 +7,13 @@ import {
   IDEA_STATUSES,
   INBOX_SOURCES,
   INBOX_STATUSES,
+  MONTH_DAY_MAX,
+  MONTH_DAY_MIN,
   PARTNERS,
   PRIORITIES,
+  RECURRING_MAX_SUB_ITEMS,
+  RECURRING_SCHEDULES,
+  RECURRING_TARGETS,
   REPORT_STATUSES,
   REPORT_TYPES,
   REVENUE_IMPACTS,
@@ -17,9 +22,11 @@ import {
   TEAM_LABELS,
   TEAMS,
   type Partner,
+  type ReportType,
   type Team,
 } from "./constants";
 import { IDEA_SCALE_MAX, IDEA_SCALE_MIN } from "./idea-score";
+import type { RecurringTemplateInput } from "./recurring-core";
 
 // Validate ở ranh giới API — mọi giá trị phân loại phải nằm trong constants.
 
@@ -226,3 +233,92 @@ export const googleSheetSourceCreateSchema = z.object({
   sheetId: z.string().trim().min(1, "Thiếu Spreadsheet ID").max(200),
   sheetRange: z.string().trim().min(1).max(200).default("Sheet1"),
 });
+
+// Template việc lặp lại — màn Cài đặt › Việc định kỳ.
+// `defaults` nhận object có cấu trúc (không phải chuỗi JSON) để validate được
+// từng field; tầng route mới serialize về cột `defaults` của DB.
+const recurringDefaultsShape = z.object({
+  type: z.string().trim().max(20).optional(),
+  team: z.string().trim().max(30).optional(),
+  category: z.string().trim().max(100).optional(),
+  priority: z.string().trim().max(20).optional(),
+  revenueImpact: z.string().trim().max(20).optional(),
+});
+
+const recurringShape = z.object({
+  name: z.string().trim().min(1, "Tên template không được trống").max(200),
+  targetDb: z.enum(RECURRING_TARGETS).default("TASK"),
+  scheduleType: z.enum(RECURRING_SCHEDULES).default("MONTHLY"),
+  scheduleDay: z.coerce
+    .number()
+    .int("Ngày hẹn phải là số nguyên")
+    .min(MONTH_DAY_MIN)
+    .max(MONTH_DAY_MAX)
+    .nullish(),
+  defaults: recurringDefaultsShape.default({}),
+  subItems: z
+    .array(z.string().trim().min(1).max(200))
+    .max(RECURRING_MAX_SUB_ITEMS, `Tối đa ${RECURRING_MAX_SUB_ITEMS} sub-item`)
+    .default([]),
+  active: z.boolean().default(true),
+});
+
+export const recurringTemplateCreateSchema = recurringShape;
+// PATCH: ràng buộc chéo (lịch ↔ ngày hẹn, loại đích ↔ defaults) kiểm tra trong
+// handler sau khi merge với bản ghi hiện có — xem validateRecurringTemplate.
+export const recurringTemplateUpdateSchema = patchSchemaOf(recurringShape);
+
+/**
+ * Ràng buộc chéo của template định kỳ. Nhận input ĐÃ chuẩn hóa
+ * (normalizeRecurringInput) — trả về thông báo lỗi tiếng Việt, null nếu hợp lệ.
+ */
+export function validateRecurringTemplate(
+  input: RecurringTemplateInput,
+): string | null {
+  const { targetDb, scheduleType, scheduleDay, defaults } = input;
+
+  if (scheduleType === "WEEKLY" && (scheduleDay == null || scheduleDay < 1 || scheduleDay > 7)) {
+    return "Lịch hằng tuần phải chọn thứ trong tuần (thứ 2 → chủ nhật)";
+  }
+  if (
+    scheduleType === "MONTHLY" &&
+    (scheduleDay == null || scheduleDay < MONTH_DAY_MIN || scheduleDay > MONTH_DAY_MAX)
+  ) {
+    return `Lịch hằng tháng phải chọn ngày trong tháng (${MONTH_DAY_MIN}–${MONTH_DAY_MAX})`;
+  }
+
+  if (targetDb === "REPORT") {
+    if (!defaults.type || !REPORT_TYPES.includes(defaults.type as ReportType)) {
+      return "Template báo cáo phải chọn loại báo cáo (tuần hoặc tháng)";
+    }
+    return null;
+  }
+
+  if (defaults.type && !TASK_TYPES.includes(defaults.type as (typeof TASK_TYPES)[number])) {
+    return "Loại công việc không hợp lệ";
+  }
+  if (defaults.team && !TEAMS.includes(defaults.team as Team)) {
+    return "Team không hợp lệ";
+  }
+  // Template tự sinh không có người nhận thì task sinh ra sẽ rơi vào team mặc định
+  // — bắt chọn team ngay từ đầu để không phải phân lại thủ công mỗi kỳ.
+  if (scheduleType !== "NONE" && !defaults.team) {
+    return "Template tự sinh phải chọn team nhận việc";
+  }
+  if (defaults.category) {
+    if (!defaults.team) return "Chọn team trước khi chọn nhóm việc";
+    if (!categoryValidForTeam(defaults.team, defaults.category)) {
+      return `Nhóm việc "${defaults.category}" không thuộc team ${TEAM_LABELS[defaults.team as Team]}`;
+    }
+  }
+  if (defaults.priority && !PRIORITIES.includes(defaults.priority as (typeof PRIORITIES)[number])) {
+    return "Mức ưu tiên không hợp lệ";
+  }
+  if (
+    defaults.revenueImpact &&
+    !REVENUE_IMPACTS.includes(defaults.revenueImpact as (typeof REVENUE_IMPACTS)[number])
+  ) {
+    return "Ảnh hưởng doanh thu không hợp lệ";
+  }
+  return null;
+}
