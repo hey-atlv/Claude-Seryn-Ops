@@ -23,8 +23,14 @@ import { patchTask } from "./task-api";
 
 // D1 — Board theo Team: mỗi team một dải 4 cột trạng thái, kéo thả card
 // sang cột khác để đổi status (chỉ trong cùng team).
+//
+// Mỗi cột là một "bảng" khép kín: tiêu đề đứng yên ở đỉnh, thân cột tự cuộn
+// khi quá cao. Trước đây cột dài bao nhiêu thì trang dài bấy nhiêu — team 20+
+// việc là phải kéo hết màn hình mới sang được team kế tiếp.
 
 const DONE_DISPLAY_LIMIT = 8;
+// Trần chiều cao thân cột — đủ thấy ~8-9 card, phần dư cuộn trong cột
+const COLUMN_BODY_MAX_H = "max-h-[56vh]";
 
 interface TeamBoardProps {
   tasks: TaskRow[];
@@ -106,22 +112,31 @@ function BoardCell({
   const shown =
     status === "DONE" ? tasks.slice(0, DONE_DISPLAY_LIMIT) : tasks;
   return (
+    // Droppable bao cả cột (kể cả tiêu đề) để thả vào đâu trong cột cũng ăn
     <div
       ref={setNodeRef}
-      className={`min-h-16 space-y-1.5 rounded-lg border border-dashed p-1.5 transition-colors ${
+      className={`flex flex-col overflow-hidden rounded-lg border transition-colors ${
         isOver
           ? "border-blue-400 bg-blue-50 dark:border-blue-600 dark:bg-blue-950/30"
-          : "border-transparent bg-zinc-100/70 dark:bg-zinc-800/40"
+          : "border-zinc-200 bg-zinc-100/70 dark:border-zinc-700/60 dark:bg-zinc-800/40"
       }`}
     >
-      {shown.map((t) => (
-        <BoardCard key={t.id} task={t} onEdit={onEdit} />
-      ))}
-      {tasks.length > shown.length && (
-        <p className="px-1 text-[10px] text-zinc-400">
-          +{tasks.length - shown.length} việc đã xong nữa
-        </p>
-      )}
+      <div className="flex shrink-0 items-center justify-between gap-1 border-b border-zinc-200 px-2 py-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:border-zinc-700/60 dark:text-zinc-400">
+        <span className="truncate">{TASK_STATUS_LABELS[status]}</span>
+        <span className="tabular-nums text-zinc-400 dark:text-zinc-500">
+          {tasks.length}
+        </span>
+      </div>
+      <div className={`min-h-16 flex-1 space-y-1.5 overflow-y-auto p-1.5 ${COLUMN_BODY_MAX_H}`}>
+        {shown.map((t) => (
+          <BoardCard key={t.id} task={t} onEdit={onEdit} />
+        ))}
+        {tasks.length > shown.length && (
+          <p className="px-1 text-[10px] text-zinc-400">
+            +{tasks.length - shown.length} việc đã xong nữa
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -176,25 +191,18 @@ export function TeamBoard({
                   · {teamTasks.filter((t) => t.status !== "DONE").length} đang mở
                 </span>
               </h3>
+              {/* Không đặt items-start: 4 cột cao bằng nhau cho ra dáng bảng,
+                  chiều cao lấy theo cột dài nhất (đã bị trần 56vh chặn) */}
               <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-                {TASK_STATUSES.map((status) => {
-                  const cellTasks = teamTasks.filter(
-                    (t) => t.status === status,
-                  );
-                  return (
-                    <div key={status}>
-                      <div className="mb-1 px-1 text-[11px] font-medium uppercase tracking-wide text-zinc-400">
-                        {TASK_STATUS_LABELS[status]} ({cellTasks.length})
-                      </div>
-                      <BoardCell
-                        team={team}
-                        status={status}
-                        tasks={cellTasks}
-                        onEdit={onEdit}
-                      />
-                    </div>
-                  );
-                })}
+                {TASK_STATUSES.map((status) => (
+                  <BoardCell
+                    key={status}
+                    team={team}
+                    status={status}
+                    tasks={teamTasks.filter((t) => t.status === status)}
+                    onEdit={onEdit}
+                  />
+                ))}
               </div>
             </section>
           );
