@@ -58,6 +58,10 @@ model Task {
   updatedAt   DateTime  @updatedAt
   completedAt DateTime?
 
+  // Ẩn khỏi các bảng ở /tasks — CHỈ ẩn, không xóa. null = đang hiện.
+  // Việc đã ẩn vẫn nguyên trong DB, quản lý ở nút "Đã ẩn" trên trang Công việc.
+  hiddenAt DateTime?
+
   @@unique([recurringTemplateId, recurrenceKey])
   @@index([status, deadline])
   @@index([team, status])

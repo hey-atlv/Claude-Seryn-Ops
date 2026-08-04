@@ -104,8 +104,12 @@ export const taskCreateSchema = taskShape.superRefine((v, ctx) => {
   }
 });
 // PATCH: các field đều optional; ràng buộc chéo team↔category check trong handler
-// sau khi merge với bản ghi hiện có
-export const taskUpdateSchema = patchSchemaOf(taskShape);
+// sau khi merge với bản ghi hiện có.
+// `hidden` là cờ ý định, không phải cột DB — handler quy ra mốc `hiddenAt`
+// (true → now, false → null). Để ngoài taskShape nên form tạo task không nhận.
+export const taskUpdateSchema = patchSchemaOf(taskShape).extend({
+  hidden: z.boolean().optional(),
+});
 
 const dependencyShape = z.object({
   title: z.string().trim().min(1, "Nội dung phối hợp không được trống").max(300),

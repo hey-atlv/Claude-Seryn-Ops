@@ -43,6 +43,7 @@ function toTaskRow(
     lastUpdateNote: task.lastUpdateNote,
     outputLink: task.outputLink,
     note: task.note,
+    hiddenAt: iso(task.hiddenAt),
     createdAt: task.createdAt.toISOString(),
     priorityScore: priorityScore(task, now),
     alertStatus: alertStatus(task, now),

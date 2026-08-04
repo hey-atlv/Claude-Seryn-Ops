@@ -26,6 +26,7 @@ export interface TaskRow {
   lastUpdateNote: string | null;
   outputLink: string | null;
   note: string | null;
+  hiddenAt: string | null; // != null → đã ẩn khỏi 3 view của /tasks (không xóa)
   createdAt: string;
   priorityScore: number;
   alertStatus: AlertStatus;

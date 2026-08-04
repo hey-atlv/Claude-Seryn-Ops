@@ -9,6 +9,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import { EyeOff } from "lucide-react";
 import {
   TASK_STATUSES,
   TASK_STATUS_LABELS,
@@ -17,6 +18,7 @@ import {
   type TaskStatus,
   type Team,
 } from "@/lib/constants";
+import { canHide } from "@/lib/task-hidden";
 import type { TaskRow } from "@/lib/task-row";
 import { formatVN } from "@/lib/timezone";
 import { patchTask } from "./task-api";
@@ -36,34 +38,37 @@ interface TeamBoardProps {
   tasks: TaskRow[];
   onEdit: (task: TaskRow) => void;
   onStatusChange: (id: string, status: TaskStatus) => void; // optimistic ở parent
+  onHide: (id: string) => void; // ẩn việc đã xong khỏi bảng (không xóa)
   onChanged: () => void;
 }
 
 const cellId = (team: string, status: string) => `${team}::${status}`;
 
+// Card là <div> chứ không phải <button>: việc đã xong có thêm nút con mắt ở góc,
+// mà button lồng trong button là HTML không hợp lệ. Phần thân (sửa + kéo thả)
+// vẫn là một button riêng chiếm gần trọn card.
 function BoardCard({
   task,
   onEdit,
+  onHide,
 }: {
   task: TaskRow;
   onEdit: (task: TaskRow) => void;
+  onHide: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id: task.id });
+  const hideable = canHide(task);
   return (
-    <button
-      type="button"
+    <div
       ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      onClick={() => onEdit(task)}
       style={
         transform
           ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
           : undefined
       }
-      className={`w-full cursor-grab rounded-md border border-l-[3px] p-2 text-left shadow-sm transition-shadow hover:shadow-md hover:ring-1 hover:ring-brand-500/40 ${
-        isDragging ? "relative z-30 opacity-90 shadow-lg" : ""
+      className={`group relative rounded-md border border-l-[3px] shadow-sm transition-shadow hover:shadow-md hover:ring-1 hover:ring-brand-500/40 ${
+        isDragging ? "z-30 opacity-90 shadow-lg" : ""
       } ${
         task.priority === "CRITICAL"
           ? "border-red-300 border-l-red-600 bg-red-50 dark:border-red-900 dark:border-l-red-500 dark:bg-red-950/40"
@@ -74,26 +79,46 @@ function BoardCard({
               : "border-zinc-200 border-l-zinc-300 bg-white dark:border-zinc-700 dark:border-l-zinc-600 dark:bg-zinc-900"
       }`}
     >
-      <div
-        className={`text-xs font-medium text-zinc-900 dark:text-zinc-100 ${
-          task.status === "DONE" ? "text-zinc-400 line-through dark:text-zinc-500" : ""
-        }`}
+      <button
+        type="button"
+        {...listeners}
+        {...attributes}
+        onClick={() => onEdit(task)}
+        className={`w-full cursor-grab p-2 text-left ${hideable ? "pr-7" : ""}`}
       >
-        {task.type === "PROJECT" && "🗂 "}
-        {task.title}
-      </div>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-zinc-500">
-        {task.priority === "CRITICAL" && <span>🔴 Critical</span>}
-        {task.priority === "HIGH" && <span>⬆ Cao</span>}
-        {task.deadline && (
-          <span>📅 {formatVN(new Date(task.deadline), "dd/MM")}</span>
-        )}
-        {task.alertStatus === "OVERDUE" && <span>🔴 quá hạn</span>}
-        {task.alertStatus === "DUE_SOON" && <span>🟡 sắp hạn</span>}
-        {task.isSilent && <span>🤫 im lặng</span>}
-        {task.leaderName && <span>{task.leaderName}</span>}
-      </div>
-    </button>
+        <div
+          className={`text-xs font-medium text-zinc-900 dark:text-zinc-100 ${
+            task.status === "DONE" ? "text-zinc-400 line-through dark:text-zinc-500" : ""
+          }`}
+        >
+          {task.type === "PROJECT" && "🗂 "}
+          {task.title}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-zinc-500">
+          {task.priority === "CRITICAL" && <span>🔴 Critical</span>}
+          {task.priority === "HIGH" && <span>⬆ Cao</span>}
+          {task.deadline && (
+            <span>📅 {formatVN(new Date(task.deadline), "dd/MM")}</span>
+          )}
+          {task.alertStatus === "OVERDUE" && <span>🔴 quá hạn</span>}
+          {task.alertStatus === "DUE_SOON" && <span>🟡 sắp hạn</span>}
+          {task.isSilent && <span>🤫 im lặng</span>}
+          {task.leaderName && <span>{task.leaderName}</span>}
+        </div>
+      </button>
+      {hideable && (
+        // Màn cảm ứng không có hover nên để hiện sẵn; từ sm trở lên mới nấp đi
+        <button
+          type="button"
+          onClick={() => onHide(task.id)}
+          title="Ẩn khỏi bảng (không xóa)"
+          aria-label={`Ẩn "${task.title}" khỏi bảng`}
+          className="absolute right-1 top-1 grid size-5 place-items-center rounded text-zinc-400 transition-opacity hover:bg-zinc-200 hover:text-zinc-700 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
+        >
+          <EyeOff size={12} strokeWidth={2.25} aria-hidden />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -102,11 +127,13 @@ function BoardCell({
   status,
   tasks,
   onEdit,
+  onHide,
 }: {
   team: Team;
   status: TaskStatus;
   tasks: TaskRow[];
   onEdit: (task: TaskRow) => void;
+  onHide: (id: string) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({ id: cellId(team, status) });
   const shown =
@@ -129,7 +156,7 @@ function BoardCell({
       </div>
       <div className={`min-h-16 flex-1 space-y-1.5 overflow-y-auto p-1.5 ${COLUMN_BODY_MAX_H}`}>
         {shown.map((t) => (
-          <BoardCard key={t.id} task={t} onEdit={onEdit} />
+          <BoardCard key={t.id} task={t} onEdit={onEdit} onHide={onHide} />
         ))}
         {tasks.length > shown.length && (
           <p className="px-1 text-[10px] text-zinc-400">
@@ -145,6 +172,7 @@ export function TeamBoard({
   tasks,
   onEdit,
   onStatusChange,
+  onHide,
   onChanged,
 }: TeamBoardProps) {
   const sensors = useSensors(
@@ -201,6 +229,7 @@ export function TeamBoard({
                     status={status}
                     tasks={teamTasks.filter((t) => t.status === status)}
                     onEdit={onEdit}
+                    onHide={onHide}
                   />
                 ))}
               </div>

@@ -35,30 +35,42 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const { id } = await params;
     const body = await req.json().catch(() => null);
     if (!body) return fail("Body không phải JSON hợp lệ");
-    const input = taskUpdateSchema.parse(body);
+    // `hidden` là cờ ý định (ẩn/bỏ ẩn), không phải cột — tách khỏi phần ghi thẳng vào DB
+    const { hidden, ...fields } = taskUpdateSchema.parse(body);
 
     const existing = await prisma.task.findUnique({ where: { id } });
     if (!existing) return fail("Không tìm thấy task", 404);
 
     // Ràng buộc chéo sau khi merge: Nhóm việc phải khớp Team
-    const team = input.team ?? existing.team;
+    const team = fields.team ?? existing.team;
     const category =
-      input.category !== undefined ? input.category : existing.category;
+      fields.category !== undefined ? fields.category : existing.category;
     if (!categoryValidForTeam(team, category)) {
       return fail(`Nhóm việc "${category}" không thuộc team đã chọn`);
     }
 
     // Tự ghi/xóa completedAt khi chuyển trạng thái
     const completedAt =
-      input.status === undefined
+      fields.status === undefined
         ? undefined
-        : input.status === "DONE"
+        : fields.status === "DONE"
           ? (existing.completedAt ?? new Date())
+          : null;
+
+    // Ẩn = ghi mốc thời gian, bỏ ẩn = xóa mốc. Việc đã ẩn mà mở lại (rời DONE)
+    // thì tự hiện lại — không thì nó vắng mặt ở cả 3 view mà không ai để ý.
+    const hiddenAt =
+      hidden === undefined
+        ? fields.status !== undefined && fields.status !== "DONE"
+          ? null
+          : undefined
+        : hidden
+          ? (existing.hiddenAt ?? new Date())
           : null;
 
     const task = await prisma.task.update({
       where: { id },
-      data: { ...input, completedAt },
+      data: { ...fields, completedAt, hiddenAt },
     });
     syncTaskToCalendar(task.id).catch((err) =>
       console.error("[GoogleSync] Sync task to calendar ngầm thất bại:", err)

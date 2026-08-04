@@ -6,15 +6,19 @@ import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Columns3,
+  EyeOff,
   FileDown,
   Grid2x2,
   Plus,
 } from "lucide-react";
 import { TEAM_LABELS, TEAMS, type TaskStatus, type Team } from "@/lib/constants";
 import type { ExternalCalendarEvent } from "@/lib/google-calendar-core";
+import { splitHidden } from "@/lib/task-hidden";
 import type { TaskRow, TasksPageData } from "@/lib/task-row";
 import { CalendarView } from "./calendar-view";
 import { EisenhowerView } from "./eisenhower-view";
+import { HiddenTasksDialog } from "./hidden-tasks-dialog";
+import { patchTask } from "./task-api";
 import { TaskForm } from "./task-form";
 import { TeamBoard } from "./team-board";
 
@@ -47,6 +51,7 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
     TEAMS.includes(initialTeam as Team) ? (initialTeam as Team) : "",
   );
   const [tasks, setTasks] = useState(data.tasks);
+  const [hiddenOpen, setHiddenOpen] = useState(false);
   const [form, setForm] = useState<{
     open: boolean;
     task: TaskRow | null;
@@ -85,14 +90,37 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
   const onStatusChange = (id: string, status: TaskStatus) =>
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
 
+  const setHiddenAt = (id: string, hiddenAt: string | null) =>
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, hiddenAt } : t)));
+
+  // Ẩn/bỏ ẩn: cập nhật lạc quan cho bảng gọn ngay, API hỏng thì trả lại như cũ.
+  // Chỉ đổi cột hiddenAt — task vẫn nguyên trong DB.
+  const setHidden = (id: string, hidden: boolean) => {
+    const previous = tasks.find((t) => t.id === id)?.hiddenAt ?? null;
+    setHiddenAt(id, hidden ? new Date().toISOString() : null);
+    patchTask(id, { hidden }).then((res) => {
+      if (!res.success) {
+        setHiddenAt(id, previous);
+        window.alert(`${hidden ? "Ẩn" : "Bỏ ẩn"} thất bại: ${res.error}`);
+        return;
+      }
+      refresh();
+    });
+  };
+
   const filtered = useMemo(
     () => (team ? tasks.filter((t) => t.team === team) : tasks),
     [tasks, team],
   );
+  // Ẩn ăn vào cả 3 view: lọc một lần ở đây, view nào cũng chỉ nhận phần đang hiện
+  const visible = useMemo(() => splitHidden(filtered).visible, [filtered]);
   const openTasks = useMemo(
-    () => filtered.filter((t) => t.status !== "DONE"),
-    [filtered],
+    () => visible.filter((t) => t.status !== "DONE"),
+    [visible],
   );
+  // Danh sách quản lý lấy trên toàn bộ task (không theo bộ lọc team) để việc đã
+  // ẩn không bao giờ nằm ngoài tầm với
+  const hiddenTasks = useMemo(() => splitHidden(tasks).hidden, [tasks]);
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-4 p-6">
@@ -164,6 +192,17 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
             {TEAM_LABELS[tm]}
           </button>
         ))}
+
+        <button
+          type="button"
+          onClick={() => setHiddenOpen(true)}
+          disabled={hiddenTasks.length === 0}
+          title="Quản lý việc đã ẩn"
+          className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-zinc-600 transition-colors enabled:hover:bg-zinc-200 disabled:cursor-default disabled:text-zinc-400 dark:text-zinc-400 dark:enabled:hover:bg-zinc-800 dark:disabled:text-zinc-600"
+        >
+          <EyeOff size={13} strokeWidth={2.25} aria-hidden />
+          Đã ẩn ({hiddenTasks.length})
+        </button>
       </div>
 
       {view === "matrix" && (
@@ -171,17 +210,26 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
       )}
       {view === "team" && (
         <TeamBoard
-          tasks={filtered}
+          tasks={visible}
           onEdit={openEdit}
           onStatusChange={onStatusChange}
+          onHide={(id) => setHidden(id, true)}
           onChanged={refresh}
         />
       )}
       {view === "calendar" && (
         <CalendarView
-          tasks={filtered}
+          tasks={visible}
           onEdit={openEdit}
           onCreateFromEvent={openCreateFromEvent}
+        />
+      )}
+
+      {hiddenOpen && (
+        <HiddenTasksDialog
+          tasks={hiddenTasks}
+          onClose={() => setHiddenOpen(false)}
+          onUnhide={(id) => setHidden(id, false)}
         />
       )}
 
