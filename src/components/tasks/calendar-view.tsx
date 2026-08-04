@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
 import {
   addMonths,
@@ -22,6 +22,15 @@ import type { TaskRow } from "@/lib/task-row";
 // Đúng cách Google phân biệt "all-day" với "timed", nên hai loại không lẫn nhau.
 
 const WEEKDAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+const WEEKDAYS_FULL = [
+  "Chủ nhật",
+  "Thứ 2",
+  "Thứ 3",
+  "Thứ 4",
+  "Thứ 5",
+  "Thứ 6",
+  "Thứ 7",
+];
 const MAX_TASK_CHIPS = 3;
 const MAX_EVENT_CHIPS = 2;
 
@@ -56,9 +65,143 @@ function chipClass(task: TaskRow): string {
   return "bg-dusty/12 text-dusty";
 }
 
+/** "2026-08-05" → "Thứ 4, 5/8/2026" (key sinh từ monthGridVN nên đọc theo UTC) */
+function formatDayTitle(key: string): string {
+  const [year, month, day] = key.split("-").map(Number);
+  const weekday = WEEKDAYS_FULL[new Date(Date.UTC(year, month - 1, day)).getUTCDay()];
+  return `${weekday}, ${day}/${month}/${year}`;
+}
+
+// Trong ô lịch chỗ hẹp nên cắt bớt tiêu đề; trong panel chi tiết thì hiện đủ.
+type ChipVariant = "cell" | "panel";
+
+interface TaskChipProps {
+  task: TaskRow;
+  variant: ChipVariant;
+  onSelect: (task: TaskRow) => void;
+}
+
+function TaskChip({ task, variant, onSelect }: TaskChipProps) {
+  const inCell = variant === "cell";
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(task)}
+      title={task.title}
+      className={`mb-0.5 block w-full rounded text-left font-medium transition-shadow hover:ring-1 hover:ring-inset hover:ring-white/15 ${
+        inCell ? "truncate px-1.5 py-[3px] text-[11px]" : "px-2 py-1.5 text-[12px]"
+      } ${chipClass(task)}`}
+    >
+      {task.title}
+    </button>
+  );
+}
+
+interface EventChipProps {
+  event: ExternalCalendarEvent;
+  variant: ChipVariant;
+  onSelect: (event: ExternalCalendarEvent) => void;
+}
+
+function EventChip({ event, variant, onSelect }: EventChipProps) {
+  const inCell = variant === "cell";
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(event)}
+      title={`${event.time ? `${event.time} — ` : ""}${event.title} — bấm để tạo task từ event Google này`}
+      className={`group mb-0.5 flex w-full items-center gap-1.5 rounded text-left text-dim transition-colors hover:bg-white/6 hover:text-text ${
+        inCell ? "px-1.5 py-[3px] text-[11px]" : "px-2 py-1.5 text-[12px]"
+      }`}
+    >
+      <span className="size-1.5 shrink-0 rounded-full bg-good/80" aria-hidden />
+      {event.time && (
+        <span className="shrink-0 tabular-nums text-muted">{event.time}</span>
+      )}
+      <span className={inCell ? "truncate" : ""}>{event.title}</span>
+      <CalendarPlus
+        size={inCell ? 11 : 13}
+        strokeWidth={2.25}
+        aria-hidden
+        className="ml-auto hidden shrink-0 text-gold group-hover:block"
+      />
+    </button>
+  );
+}
+
+interface DayDetailPanelProps {
+  dateKey: string;
+  tasks: TaskRow[];
+  events: ExternalCalendarEvent[];
+  onClose: () => void;
+  onSelectTask: (task: TaskRow) => void;
+  onSelectEvent: (event: ExternalCalendarEvent) => void;
+}
+
+// Popup chi tiết ngày kiểu Google: liệt kê đầy đủ, không cắt bớt.
+// Dùng lại đúng pattern overlay của useConfirm (Esc + bấm nền để đóng).
+function DayDetailPanel({
+  dateKey,
+  tasks,
+  events,
+  onClose,
+  onSelectTask,
+  onSelectEvent,
+}: DayDetailPanelProps) {
+  const title = formatDayTitle(dateKey);
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+    >
+      <div className="flex max-h-[80vh] w-full max-w-sm flex-col rounded-xl border border-hair bg-panel shadow-[var(--shadow-elevated)]">
+        <div className="flex items-start justify-between gap-3 border-b border-hair-soft px-5 py-3.5">
+          <div>
+            <p className="text-sm font-semibold text-text">{title}</p>
+            <p className="mt-0.5 text-xs text-muted">
+              {tasks.length} việc · {events.length} lịch Google
+            </p>
+          </div>
+          <button
+            type="button"
+            autoFocus
+            aria-label="Đóng"
+            onClick={onClose}
+            className="-mr-1.5 grid size-7 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-panel-3 hover:text-text"
+          >
+            <X size={16} aria-hidden />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-3 py-3">
+          {tasks.map((t) => (
+            <TaskChip key={t.id} task={t} variant="panel" onSelect={onSelectTask} />
+          ))}
+          {events.map((e) => (
+            <EventChip key={e.id} event={e} variant="panel" onSelect={onSelectEvent} />
+          ))}
+          {tasks.length === 0 && events.length === 0 && (
+            <p className="px-2 py-1.5 text-[12px] text-faint">Ngày này chưa có gì.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewProps) {
   const [{ year, month }, setYm] = useState(() => currentMonthVN());
   const [externalEvents, setExternalEvents] = useState<ExternalCalendarEvent[]>([]);
+  // Ngày đang mở panel chi tiết ("yyyy-MM-dd"), null = không mở
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +239,16 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
 
   const grid = monthGridVN(year, month);
   const todayKey = dateKeyVN(new Date());
+
+  // Panel luôn nhường chỗ cho form: đóng trước rồi mới mở form sửa/tạo task
+  const selectTask = (task: TaskRow) => {
+    setOpenKey(null);
+    onEdit(task);
+  };
+  const selectEvent = (event: ExternalCalendarEvent) => {
+    setOpenKey(null);
+    onCreateFromEvent(event);
+  };
 
   return (
     <div>
@@ -162,6 +315,7 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
                 const hiddenTasks = dayTasks.slice(MAX_TASK_CHIPS);
                 const hiddenEvents = dayEvents.slice(MAX_EVENT_CHIPS);
                 const hiddenCount = hiddenTasks.length + hiddenEvents.length;
+                const itemCount = dayTasks.length + dayEvents.length;
                 const isToday = day.key === todayKey;
                 return (
                   <div
@@ -172,65 +326,51 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
                   >
                     {/* Google đặt số ngày ở giữa đỉnh ô, hôm nay là vòng tròn đặc */}
                     <div className="mb-1 flex justify-center">
-                      <span
-                        className={`grid h-6 min-w-6 place-items-center rounded-full px-1 text-[12px] ${
+                      <button
+                        type="button"
+                        disabled={itemCount === 0}
+                        onClick={() => setOpenKey(day.key)}
+                        aria-label={`Xem chi tiết ${formatDayTitle(day.key)}`}
+                        className={`grid h-6 min-w-6 place-items-center rounded-full px-1 text-[12px] transition-colors ${
                           isToday
                             ? "bg-gold font-bold text-bg"
                             : day.inMonth
                               ? "font-medium text-dim"
                               : "text-faint/60"
+                        } ${
+                          itemCount === 0
+                            ? "cursor-default"
+                            : isToday
+                              ? "hover:bg-gold/85"
+                              : "hover:bg-white/10 hover:text-text"
                         }`}
                       >
                         {day.day}
-                      </span>
+                      </button>
                     </div>
 
                     {dayTasks.slice(0, MAX_TASK_CHIPS).map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => onEdit(t)}
-                        title={t.title}
-                        className={`mb-0.5 block w-full truncate rounded px-1.5 py-[3px] text-left text-[11px] font-medium transition-shadow hover:ring-1 hover:ring-inset hover:ring-white/15 ${chipClass(t)}`}
-                      >
-                        {t.title}
-                      </button>
+                      <TaskChip key={t.id} task={t} variant="cell" onSelect={selectTask} />
                     ))}
 
                     {dayEvents.slice(0, MAX_EVENT_CHIPS).map((e) => (
-                      <button
+                      <EventChip
                         key={e.id}
-                        type="button"
-                        onClick={() => onCreateFromEvent(e)}
-                        title={`${e.time ? `${e.time} — ` : ""}${e.title} — bấm để tạo task từ event Google này`}
-                        className="group mb-0.5 flex w-full items-center gap-1.5 rounded px-1.5 py-[3px] text-left text-[11px] text-dim transition-colors hover:bg-white/6 hover:text-text"
-                      >
-                        <span
-                          className="size-1.5 shrink-0 rounded-full bg-good/80"
-                          aria-hidden
-                        />
-                        {e.time && (
-                          <span className="shrink-0 tabular-nums text-muted">
-                            {e.time}
-                          </span>
-                        )}
-                        <span className="truncate">{e.title}</span>
-                        <CalendarPlus
-                          size={11}
-                          strokeWidth={2.25}
-                          aria-hidden
-                          className="ml-auto hidden shrink-0 text-gold group-hover:block"
-                        />
-                      </button>
+                        event={e}
+                        variant="cell"
+                        onSelect={selectEvent}
+                      />
                     ))}
 
                     {hiddenCount > 0 && (
-                      <p
+                      <button
+                        type="button"
+                        onClick={() => setOpenKey(day.key)}
                         title={[...hiddenTasks.map((t) => t.title), ...hiddenEvents.map((e) => e.title)].join("\n")}
-                        className="px-1.5 pt-0.5 text-[11px] font-medium text-faint"
+                        className="block w-full rounded px-1.5 py-[3px] text-left text-[11px] font-medium text-faint transition-colors hover:bg-white/6 hover:text-dim"
                       >
                         +{hiddenCount} nữa
-                      </p>
+                      </button>
                     )}
                   </div>
                 );
@@ -239,6 +379,17 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
           ))}
         </div>
       </div>
+
+      {openKey && (
+        <DayDetailPanel
+          dateKey={openKey}
+          tasks={byDay.get(openKey) ?? []}
+          events={byDayExternal.get(openKey) ?? []}
+          onClose={() => setOpenKey(null)}
+          onSelectTask={selectTask}
+          onSelectEvent={selectEvent}
+        />
+      )}
     </div>
   );
 }
