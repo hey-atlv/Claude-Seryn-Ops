@@ -1,2 +1,4 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Auto detect text files and perform LF normalization.
+# eol=lf giữ LF cả trong repo lẫn thư mục làm việc, kể cả trên Windows có
+# core.autocrlf=true — hết cảnh báo "LF will be replaced by CRLF" mỗi lần add.
+* text=auto eol=lf

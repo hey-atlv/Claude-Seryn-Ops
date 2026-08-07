@@ -1,3 +1,4 @@
+import { vi } from "date-fns/locale";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 // Toàn hệ thống dùng giờ Việt Nam. DB lưu UTC; mọi ranh giới ngày tính theo VN.
@@ -31,7 +32,11 @@ export function daysUntilVN(deadline: Date, now: Date = new Date()): number {
   );
 }
 
-/** Format một mốc thời gian theo giờ VN để hiển thị */
+/**
+ * Format một mốc thời gian theo giờ VN để hiển thị.
+ * Locale `vi` để token phụ thuộc ngôn ngữ ra tiếng Việt ("Thứ Sáu" chứ không
+ * phải "Friday"); các format số như dd/MM/yyyy không bị ảnh hưởng.
+ */
 export function formatVN(date: Date, fmt = "dd/MM/yyyy HH:mm"): string {
-  return formatInTimeZone(date, VN_TZ, fmt);
+  return formatInTimeZone(date, VN_TZ, fmt, { locale: vi });
 }
