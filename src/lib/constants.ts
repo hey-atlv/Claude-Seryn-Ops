@@ -8,6 +8,7 @@ export const TEAMS = [
   "TVOL",
   "TNNB",
   "KSKD_KT",
+  "CMO",
 ] as const;
 export type Team = (typeof TEAMS)[number];
 
@@ -18,6 +19,7 @@ export const TEAM_LABELS: Record<Team, string> = {
   TVOL: "TVOL",
   TNNB: "TNNB",
   KSKD_KT: "KSKD&KT",
+  CMO: "CMO",
 };
 
 // Tag ngắn của team — TaskForm tự gắn vào đầu Tên việc: "[Digi] - …"
@@ -29,6 +31,7 @@ export const TEAM_TAGS: Record<Team, string> = {
   TVOL: "TVOL",
   TNNB: "TNNB",
   KSKD_KT: "KSKD",
+  CMO: "CMO",
 };
 
 // Kênh của Team Digital — Digital tách theo kênh, mỗi kênh 1 leader.
@@ -65,6 +68,15 @@ export const CATEGORY_BY_TEAM: Record<Team, string[]> = {
     "Kiểm soát chi phí",
     "BCTC nội bộ",
     "Rủi ro tài chính",
+  ],
+  // Việc cấp CMO/GĐ khối — theo 12 nhóm chức năng nhiệm vụ trong file bàn giao
+  CMO: [
+    "Kế hoạch & Chiến lược",
+    "Ngân sách & Chi phí",
+    "Cơ chế & Nhân sự",
+    "Sản phẩm mới",
+    "Báo cáo BGĐ",
+    "Phối hợp liên khối",
   ],
 };
 
