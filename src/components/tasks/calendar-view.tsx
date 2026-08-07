@@ -197,18 +197,31 @@ function DayDetailPanel({
   );
 }
 
+// Cache events Google theo tháng cho cả phiên — API mất 1-3s, không có cache
+// thì mỗi lần quay lại tab Calendar là chờ lại từ đầu. Stale-while-revalidate:
+// có cache hiện ngay, vẫn fetch nền để cập nhật.
+const eventsCache = new Map<string, ExternalCalendarEvent[]>();
+
 export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewProps) {
   const [{ year, month }, setYm] = useState(() => currentMonthVN());
-  const [externalEvents, setExternalEvents] = useState<ExternalCalendarEvent[]>([]);
+  const [externalEvents, setExternalEvents] = useState<ExternalCalendarEvent[]>(() => {
+    const { year: y, month: m } = currentMonthVN();
+    return eventsCache.get(`${y}-${m}`) ?? [];
+  });
   // Ngày đang mở panel chi tiết ("yyyy-MM-dd"), null = không mở
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    const key = `${year}-${month}`;
+    setExternalEvents(eventsCache.get(key) ?? []);
     apiCall<ExternalCalendarEvent[]>(
       `/api/google/calendar-events?year=${year}&month=${month}`,
     ).then((res) => {
-      if (!cancelled && res.success) setExternalEvents(res.data ?? []);
+      if (cancelled || !res.success) return;
+      const data = res.data ?? [];
+      eventsCache.set(key, data);
+      setExternalEvents(data);
     });
     return () => {
       cancelled = true;

@@ -48,14 +48,10 @@ export default function RootLayout({
       className={`dark ${beVietnam.variable} ${cormorant.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        {/* type="text/plain" ở client + suppressHydrationWarning: pattern trong
-            docs Next (preventing-flash-before-hydration) để React dev không
-            cảnh báo về script tag — script chỉ cần chạy lúc parse HTML. */}
-        <script
-          type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-        />
+        {/* Theo docs Next "preventing-flash-before-hydration" mục Themes.
+            React dev có thể log cảnh báo script-tag khi HMR re-render layout —
+            noise dev-only, production không render lại root layout ở client. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full">
         <div className="flex min-h-screen flex-col lg:flex-row">

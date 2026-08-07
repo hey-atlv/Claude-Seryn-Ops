@@ -16,6 +16,23 @@ import {
 const POLL_MS = 5 * 60_000;
 const STORAGE_KEY = "seryn-notify-last-shown";
 
+// Bell được mount 2 lần (sidebar desktop + top bar mobile) → chia sẻ 1 request
+// thay vì gọi /api/notifications đôi. Trong cửa sổ SHARE_MS, mọi instance dùng
+// chung 1 promise; hết cửa sổ thì lần gọi kế tiếp fetch mới.
+const SHARE_MS = 10_000;
+let sharedFetch: {
+  at: number;
+  promise: ReturnType<typeof apiCall<NotifyItem[]>>;
+} | null = null;
+
+function fetchNotifications() {
+  const now = Date.now();
+  if (!sharedFetch || now - sharedFetch.at > SHARE_MS) {
+    sharedFetch = { at: now, promise: apiCall<NotifyItem[]>("/api/notifications") };
+  }
+  return sharedFetch.promise;
+}
+
 const TIER_DOT: Record<NotifyTier, string> = {
   CRITICAL: "bg-red-500",
   HIGH: "bg-orange-400",
@@ -51,7 +68,7 @@ export function NotificationBell() {
     let cancelled = false;
 
     async function refresh(isAppOpen: boolean) {
-      const res = await apiCall<NotifyItem[]>("/api/notifications");
+      const res = await fetchNotifications();
       if (cancelled || !res.success || !res.data) return;
       itemsRef.current = res.data;
       setItems(res.data);
