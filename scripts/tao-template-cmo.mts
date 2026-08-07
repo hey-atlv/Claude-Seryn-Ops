@@ -37,7 +37,7 @@ async function main() {
           scheduleDay: 1, // sinh ngày 1 hằng tháng
           defaults: JSON.stringify({
             type: "TASK",
-            team: "DIGITAL",
+            team: "CMO",
             priority: d.priority,
             revenueImpact: d.priority === "HIGH" ? "HIGH" : "MEDIUM",
             deadlineDay: "31", // hạn cuối tháng (tự lùi theo số ngày thực)

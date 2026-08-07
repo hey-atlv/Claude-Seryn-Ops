@@ -25,7 +25,7 @@ const START = "2026-08-07";
 const DEADLINE = "2026-08-31";
 
 async function main() {
-  const at = await prisma.leader.findFirst({ where: { team: "DIGITAL", name: "Ất" } });
+  const at = await prisma.leader.findFirst({ where: { team: "CMO", name: "Ất" } });
 
   let created = 0;
   for (const d of DUTIES) {
@@ -38,7 +38,7 @@ async function main() {
       data: {
         title: d.title,
         type: "TASK",
-        team: "DIGITAL",
+        team: "CMO",
         leaderId: at?.id ?? null,
         status: "TODO",
         priority: d.priority,

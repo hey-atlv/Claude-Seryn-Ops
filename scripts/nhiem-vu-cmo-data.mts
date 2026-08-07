@@ -13,7 +13,7 @@ export interface Duty {
 export const DUTIES: Duty[] = [
   {
     stt: 1,
-    title: "[Digi] - Kế hoạch Data & MKT toàn diện theo khoán doanh thu",
+    title: "[CMO] - Kế hoạch Data & MKT toàn diện theo khoán doanh thu",
     freq: "Tháng - Quý - Năm",
     priority: "HIGH",
     detail: [
@@ -26,7 +26,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 2,
-    title: "[Digi] - Chỉ đạo & giám sát triển khai kế hoạch MKT, truyền thông",
+    title: "[CMO] - Chỉ đạo & giám sát triển khai kế hoạch MKT, truyền thông",
     freq: "Tháng - Quý - Năm",
     priority: "HIGH",
     detail: [
@@ -39,7 +39,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 4,
-    title: "[Digi] - Kiểm soát chi phí & hiệu quả kinh doanh theo định mức",
+    title: "[CMO] - Kiểm soát chi phí & hiệu quả kinh doanh theo định mức",
     freq: "Tháng - Quý - Năm",
     priority: "HIGH",
     detail: [
@@ -52,7 +52,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 5,
-    title: "[Digi] - Cơ chế lương, thưởng, khoán, động lực (C&B)",
+    title: "[CMO] - Cơ chế lương, thưởng, khoán, động lực (C&B)",
     freq: "Tháng - Quý - Năm",
     priority: "HIGH",
     detail: [
@@ -64,7 +64,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 6,
-    title: "[Digi] - Xây dựng & giám sát hệ thống quy trình, quy định",
+    title: "[CMO] - Xây dựng & giám sát hệ thống quy trình, quy định",
     freq: "Tháng - Quý",
     priority: "NORMAL",
     detail: [
@@ -75,7 +75,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 7,
-    title: "[Digi] - Tuyển dụng & đào tạo nhân sự khối MKT",
+    title: "[CMO] - Tuyển dụng & đào tạo nhân sự khối MKT",
     freq: "Tháng",
     priority: "NORMAL",
     detail: [
@@ -87,7 +87,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 8,
-    title: "[Digi] - Phối hợp phát triển sản phẩm mới (R&D, Salekit, Launching)",
+    title: "[CMO] - Phối hợp phát triển sản phẩm mới (R&D, Salekit, Launching)",
     freq: "Tháng - Quý",
     priority: "HIGH",
     detail: [
@@ -99,7 +99,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 9,
-    title: "[Digi] - Báo cáo & phối hợp Ban Giám đốc",
+    title: "[CMO] - Báo cáo & phối hợp Ban Giám đốc",
     freq: "Tháng",
     priority: "NORMAL",
     detail: [
@@ -110,7 +110,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 10,
-    title: "[Digi] - Thúc đẩy văn hoá DN & truyền thông nội bộ",
+    title: "[CMO] - Thúc đẩy văn hoá DN & truyền thông nội bộ",
     freq: "Tháng",
     priority: "NORMAL",
     detail: [
@@ -122,7 +122,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 11,
-    title: "[Digi] - Tiếp nhận & xử lý yêu cầu khối Vận hành",
+    title: "[CMO] - Tiếp nhận & xử lý yêu cầu khối Vận hành",
     freq: "Tháng",
     priority: "NORMAL",
     detail: [
@@ -136,7 +136,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 12,
-    title: "[Digi] - Tiếp nhận & xử lý yêu cầu khối CEC",
+    title: "[CMO] - Tiếp nhận & xử lý yêu cầu khối CEC",
     freq: "Tháng",
     priority: "NORMAL",
     detail: [
@@ -150,7 +150,7 @@ export const DUTIES: Duty[] = [
   },
   {
     stt: 13,
-    title: "[Digi] - Phối hợp quy trình TCKT & duyệt chi theo phân quyền",
+    title: "[CMO] - Phối hợp quy trình TCKT & duyệt chi theo phân quyền",
     freq: "Tháng - Quý",
     priority: "NORMAL",
     detail: [
