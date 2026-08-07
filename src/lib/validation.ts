@@ -248,6 +248,8 @@ const recurringDefaultsShape = z.object({
   category: z.string().trim().max(100).optional(),
   priority: z.string().trim().max(20).optional(),
   revenueImpact: z.string().trim().max(20).optional(),
+  deadlineDay: z.string().trim().max(2).optional(),
+  note: z.string().trim().max(2000).optional(),
 });
 
 const recurringShape = z.object({
@@ -324,6 +326,15 @@ export function validateRecurringTemplate(
     !REVENUE_IMPACTS.includes(defaults.revenueImpact as (typeof REVENUE_IMPACTS)[number])
   ) {
     return "Ảnh hưởng doanh thu không hợp lệ";
+  }
+  if (defaults.deadlineDay !== undefined) {
+    const day = Number(defaults.deadlineDay);
+    if (!Number.isInteger(day) || day < MONTH_DAY_MIN || day > MONTH_DAY_MAX) {
+      return `Ngày deadline phải trong khoảng ${MONTH_DAY_MIN}–${MONTH_DAY_MAX}`;
+    }
+    if (scheduleType !== "MONTHLY") {
+      return "Ngày deadline riêng chỉ dùng cho lịch hằng tháng";
+    }
   }
   return null;
 }

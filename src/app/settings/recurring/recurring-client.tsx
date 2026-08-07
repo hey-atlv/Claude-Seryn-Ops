@@ -57,6 +57,8 @@ interface FormState {
   category: string;
   priority: string;
   revenueImpact: string;
+  deadlineDay: string; // MONTHLY: ngày deadline riêng (rỗng = trùng ngày sinh)
+  note: string; // ghi chú điền sẵn cho bản ghi sinh ra
   subItemsText: string; // mỗi dòng 1 sub-item
   active: boolean;
 }
@@ -76,6 +78,8 @@ function toFormState(row: RecurringTemplateRow | null): FormState {
     category: d.category ?? "",
     priority: d.priority ?? "NORMAL",
     revenueImpact: d.revenueImpact ?? "MEDIUM",
+    deadlineDay: d.deadlineDay ?? "",
+    note: d.note ?? "",
     subItemsText: (row?.subItems ?? []).join("\n"),
     active: row?.active ?? true,
   };
@@ -136,6 +140,11 @@ function TemplateForm({
             category: form.category || undefined,
             priority: form.priority,
             revenueImpact: form.revenueImpact,
+            deadlineDay:
+              form.scheduleType === "MONTHLY"
+                ? form.deadlineDay.trim() || undefined
+                : undefined,
+            note: form.note.trim() || undefined,
           },
       subItems: isReport
         ? []
@@ -342,9 +351,39 @@ function TemplateForm({
                 ))}
               </select>
             </label>
+
+            {form.scheduleType === "MONTHLY" && (
+              <label className="block">
+                <span className={LABEL}>
+                  Deadline vào ngày (bỏ trống = trùng ngày sinh; 31 = cuối tháng)
+                </span>
+                <input
+                  type="number"
+                  min={MONTH_DAY_MIN}
+                  max={MONTH_DAY_MAX}
+                  value={form.deadlineDay}
+                  onChange={(e) => set("deadlineDay", e.target.value)}
+                  placeholder="31"
+                  className={INPUT}
+                />
+              </label>
+            )}
           </>
         )}
       </div>
+
+      {!isReport && (
+        <label className="block">
+          <span className={LABEL}>Ghi chú điền sẵn cho task sinh ra</span>
+          <textarea
+            rows={3}
+            value={form.note}
+            onChange={(e) => set("note", e.target.value)}
+            placeholder="Checklist đầu việc chi tiết, đầu mối phối hợp…"
+            className={`${INPUT} text-xs`}
+          />
+        </label>
+      )}
 
       {!isReport && (
         <label className="block">
