@@ -4,14 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Activity,
   Bot,
   CheckSquare,
   FileDown,
   Link2,
   LogOut,
   Menu,
-  MoonStar,
   NotebookPen,
   Plus,
   Repeat,
@@ -35,9 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/tasks", label: "Công việc", icon: CheckSquare },
   { href: "/workspace", label: "Sổ tay", icon: NotebookPen },
   { href: "/ops", label: "Phối hợp & Báo cáo", icon: Link2 },
-  { href: "/daily-summary", label: "Cuối ngày", icon: MoonStar },
   { href: "/import", label: "Import", icon: FileDown },
-  { href: "/metrics", label: "Sức khỏe", icon: Activity },
   { href: "/settings/recurring", label: "Việc định kỳ", icon: Repeat },
   { href: "/settings", label: "Cài đặt", icon: Settings },
 ];
