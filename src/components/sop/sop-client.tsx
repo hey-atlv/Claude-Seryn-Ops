@@ -101,11 +101,8 @@ export function SopClient({ docs }: SopClientProps) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-4 p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-          📚 SOP &amp; Templates
-        </h1>
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={openNew}
@@ -255,6 +252,6 @@ export function SopClient({ docs }: SopClientProps) {
         </section>
       </div>
       {confirmDialog}
-    </main>
+    </div>
   );
 }

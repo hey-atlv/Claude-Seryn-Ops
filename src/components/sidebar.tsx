@@ -6,19 +6,16 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   Bot,
-  BookOpen,
-  CalendarClock,
   CheckSquare,
   FileDown,
-  Lightbulb,
   Link2,
   LogOut,
   Menu,
   MoonStar,
+  NotebookPen,
   Plus,
   Repeat,
   Settings,
-  StickyNote,
   Sun,
   X,
 } from "lucide-react";
@@ -36,13 +33,9 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Hôm nay", icon: Sun },
   { href: "/tasks", label: "Công việc", icon: CheckSquare },
-  { href: "/notes", label: "Ghi chú", icon: StickyNote },
-  { href: "/ideas", label: "Ý tưởng", icon: Lightbulb },
-  { href: "/dependencies", label: "Phối hợp", icon: Link2 },
-  { href: "/reports", label: "Báo cáo", icon: CalendarClock },
-  { href: "/sop", label: "SOP", icon: BookOpen },
+  { href: "/workspace", label: "Sổ tay", icon: NotebookPen },
+  { href: "/ops", label: "Phối hợp & Báo cáo", icon: Link2 },
   { href: "/daily-summary", label: "Cuối ngày", icon: MoonStar },
-  { href: "/assistant", label: "Trợ lý AI", icon: Bot },
   { href: "/import", label: "Import", icon: FileDown },
   { href: "/metrics", label: "Sức khỏe", icon: Activity },
   { href: "/settings/recurring", label: "Việc định kỳ", icon: Repeat },
@@ -51,8 +44,8 @@ const NAV_ITEMS: NavItem[] = [
 
 const QUICK_ACTIONS: { href: string; label: string; icon: React.ReactNode }[] = [
   { href: "/tasks", label: "Thêm công việc", icon: <Plus size={13} strokeWidth={2.5} aria-hidden /> },
-  { href: "/notes", label: "Ghi chú nhanh", icon: <Plus size={13} strokeWidth={2.5} aria-hidden /> },
-  { href: "/assistant", label: "Hỏi Trợ lý AI", icon: <Bot size={13} strokeWidth={2.25} aria-hidden /> },
+  { href: "/workspace?tab=notes", label: "Ghi chú nhanh", icon: <Plus size={13} strokeWidth={2.5} aria-hidden /> },
+  { href: "/workspace?tab=assistant", label: "Hỏi Trợ lý AI", icon: <Bot size={13} strokeWidth={2.25} aria-hidden /> },
 ];
 
 function isActivePath(pathname: string, href: string) {

@@ -42,11 +42,8 @@ export function DepsClient({ deps }: DepsClientProps) {
   };
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-4 p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-          🔗 Phối hợp liên phòng
-        </h1>
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-center justify-end gap-3">
         <button
           type="button"
           onClick={() => setForm({ open: true, dep: null })}
@@ -106,6 +103,6 @@ export function DepsClient({ deps }: DepsClientProps) {
           }}
         />
       )}
-    </main>
+    </div>
   );
 }

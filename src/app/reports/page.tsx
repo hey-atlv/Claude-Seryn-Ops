@@ -1,10 +1,6 @@
-import { ReportsClient } from "@/components/reports/reports-client";
-import { getReportsPageData } from "@/lib/reports-page";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-// 📋 Báo cáo ban lãnh đạo — DB3 (Giai đoạn E2)
-export default async function ReportsPage() {
-  const reports = await getReportsPageData();
-  return <ReportsClient reports={reports} />;
+// Báo cáo đã gộp vào /ops. Giữ route cũ để bookmark không 404.
+export default function ReportsPage() {
+  redirect("/ops?tab=reports");
 }
