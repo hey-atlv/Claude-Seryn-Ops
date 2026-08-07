@@ -11,6 +11,7 @@ import {
   TASK_STATUS_LABELS,
   TASK_TYPES,
   TEAM_LABELS,
+  TEAM_TAGS,
   TEAMS,
   type Team,
 } from "@/lib/constants";
@@ -190,8 +191,15 @@ export function TaskForm({
     e.preventDefault();
     setSaving(true);
     setError(null);
+    // Tên việc tự gắn tag team ở đầu — "[Digi] - …". Người dùng tự gõ tag
+    // "[...]" riêng (vd [FB], [CMO]) thì tôn trọng, không chèn thêm.
+    const rawTitle = form.title.trim();
+    const autoTitle =
+      rawTitle && !rawTitle.startsWith("[")
+        ? `[${TEAM_TAGS[form.team]}] - ${rawTitle}`
+        : rawTitle;
     const payload = {
-      title: form.title.trim(),
+      title: autoTitle,
       type: form.type,
       team: form.team,
       leaderId: form.leaderId || null,
@@ -316,6 +324,14 @@ export function TaskForm({
             placeholder="VD: Tối ưu chiến dịch lead tháng 8"
             className={INPUT}
           />
+          {form.title.trim().length > 0 && !form.title.trim().startsWith("[") && (
+            <p className="mt-1 text-xs text-zinc-400">
+              Sẽ lưu thành:{" "}
+              <span className="font-medium text-zinc-500 dark:text-zinc-300">
+                [{TEAM_TAGS[form.team]}] - {form.title.trim()}
+              </span>
+            </p>
+          )}
         </Field>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

@@ -11,6 +11,7 @@ import {
   MONTH_DAY_MIN,
   PARTNERS,
   PRIORITIES,
+  CHANNELS,
   RECURRING_MAX_SUB_ITEMS,
   RECURRING_SCHEDULES,
   RECURRING_TARGETS,
@@ -338,3 +339,14 @@ export function validateRecurringTemplate(
   }
   return null;
 }
+
+// Leader — CRUD ở Cài đặt › Team & Leader. Channel chỉ có nghĩa với Digital
+// (ràng buộc chéo kiểm tra ở route sau khi merge bản ghi hiện có).
+const leaderShape = z.object({
+  name: z.string().trim().min(1, "Tên leader không được trống").max(100),
+  team: z.enum(TEAMS),
+  channel: z.enum(CHANNELS).nullish(),
+  chatHandle: z.string().trim().max(100).nullish(),
+});
+export const leaderCreateSchema = leaderShape;
+export const leaderUpdateSchema = patchSchemaOf(leaderShape);

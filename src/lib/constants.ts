@@ -20,6 +20,17 @@ export const TEAM_LABELS: Record<Team, string> = {
   KSKD_KT: "KSKD&KT",
 };
 
+// Tag ngắn của team — TaskForm tự gắn vào đầu Tên việc: "[Digi] - …"
+// (chỉ khi người dùng chưa tự gõ tag "[...]" riêng).
+export const TEAM_TAGS: Record<Team, string> = {
+  DIGITAL: "Digi",
+  CONTENT: "Content",
+  PR_TRADE_EVENT: "PR",
+  TVOL: "TVOL",
+  TNNB: "TNNB",
+  KSKD_KT: "KSKD",
+};
+
 // Kênh của Team Digital — Digital tách theo kênh, mỗi kênh 1 leader.
 // (Các team khác không chia kênh — Leader.channel = null.)
 export const CHANNELS = ["FACEBOOK", "ZALO", "GOOGLE"] as const;
