@@ -1,14 +1,15 @@
 // Danh mục cố định của hệ thống — nguồn sự thật duy nhất cho validation
 // (SQLite không hỗ trợ enum nên các field lưu String, validate bằng các hằng số này)
 
+// Thứ tự hiển thị: CMO đứng đầu (chip lọc, board, trang Team & Leader…)
 export const TEAMS = [
+  "CMO",
   "DIGITAL",
   "CONTENT",
   "PR_TRADE_EVENT",
   "TVOL",
   "TNNB",
   "KSKD_KT",
-  "CMO",
 ] as const;
 export type Team = (typeof TEAMS)[number];
 
@@ -17,7 +18,7 @@ export const TEAM_LABELS: Record<Team, string> = {
   CONTENT: "Content",
   PR_TRADE_EVENT: "PR&Trade&Event",
   TVOL: "TVOL",
-  TNNB: "TNNB",
+  TNNB: "TTNB",
   KSKD_KT: "KSKD&KT",
   CMO: "CMO",
 };
@@ -29,7 +30,7 @@ export const TEAM_TAGS: Record<Team, string> = {
   CONTENT: "Content",
   PR_TRADE_EVENT: "PR",
   TVOL: "TVOL",
-  TNNB: "TNNB",
+  TNNB: "TTNB",
   KSKD_KT: "KSKD",
   CMO: "CMO",
 };
