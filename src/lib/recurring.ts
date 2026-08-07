@@ -77,6 +77,13 @@ export async function generateRecurring(now: Date = new Date()): Promise<number>
         const leader = defaults.team
           ? await prisma.leader.findFirst({ where: { team: defaults.team } })
           : null;
+        // deadlineDay: MONTHLY được hẹn deadline khác ngày sinh (vd sinh ngày 1,
+        // hạn ngày 31 — tự lùi theo số ngày thực của tháng)
+        const dlDay = Number(defaults.deadlineDay);
+        const taskDeadline =
+          type === "MONTHLY" && Number.isInteger(dlDay) && dlDay >= 1
+            ? scheduledDeadlineVN(type, dlDay, now)
+            : deadline;
         const newTask = await prisma.task.create({
           data: {
             title: `${tpl.name} (${periodLabel(type, now)})`,
@@ -86,7 +93,8 @@ export async function generateRecurring(now: Date = new Date()): Promise<number>
             category: defaults.category ?? null,
             priority: defaults.priority ?? "NORMAL",
             revenueImpact: defaults.revenueImpact ?? "MEDIUM",
-            deadline,
+            deadline: taskDeadline,
+            note: defaults.note ?? null,
             recurringTemplateId: tpl.id,
             recurrenceKey: key,
           },

@@ -149,6 +149,12 @@ export interface RecurringDefaults {
   category?: string;
   priority?: string;
   revenueImpact?: string;
+  /** TASK MONTHLY: ngày deadline trong tháng (vd "31" = cuối tháng, tự lùi theo
+   *  số ngày thực) — tách khỏi scheduleDay (ngày sinh). Không điền = deadline
+   *  đúng ngày sinh như cũ. */
+  deadlineDay?: string;
+  /** TASK: ghi chú điền sẵn cho bản ghi sinh ra (vd checklist đầu việc chi tiết) */
+  note?: string;
 }
 
 export interface RecurringTemplateInput {
@@ -213,6 +219,8 @@ export function normalizeRecurringInput(
         category: trimmed(input.defaults.category),
         priority: trimmed(input.defaults.priority),
         revenueImpact: trimmed(input.defaults.revenueImpact),
+        deadlineDay: trimmed(input.defaults.deadlineDay),
+        note: trimmed(input.defaults.note),
       };
 
   return {

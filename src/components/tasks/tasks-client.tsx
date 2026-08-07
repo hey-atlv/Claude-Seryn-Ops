@@ -8,6 +8,7 @@ import {
   Columns3,
   EyeOff,
   FileDown,
+  FolderKanban,
   Grid2x2,
   Plus,
 } from "lucide-react";
@@ -18,18 +19,21 @@ import type { TaskRow, TasksPageData } from "@/lib/task-row";
 import { CalendarView } from "./calendar-view";
 import { EisenhowerView } from "./eisenhower-view";
 import { HiddenTasksDialog } from "./hidden-tasks-dialog";
+import { ProjectsView } from "./projects-view";
 import { patchTask } from "./task-api";
 import { TaskForm } from "./task-form";
 import { TeamBoard } from "./team-board";
 import { TimelineView } from "./timeline-view";
 
-// Trang /tasks có 3 views: Ma trận (mặc định, gồm Dòng thời gian ở trên và
-// 4 ô Eisenhower ở dưới) · Theo Team · Calendar. Các ?view= cũ
-// (timeline/priority/today/alerts/silent/projects) tự rơi về Ma trận — không 404.
+// Trang /tasks có 4 views: Ma trận (mặc định, gồm Dòng thời gian ở trên và
+// 4 ô Eisenhower ở dưới) · Theo Team · Dự án (card + tick giai đoạn con) ·
+// Calendar. Các ?view= cũ (timeline/priority/today/alerts/silent) tự rơi về
+// Ma trận — không 404.
 
 const VIEWS = [
   { key: "matrix", label: "Ma trận", icon: Grid2x2 },
   { key: "team", label: "Theo Team", icon: Columns3 },
+  { key: "projects", label: "Dự án", icon: FolderKanban },
   { key: "calendar", label: "Calendar", icon: CalendarDays },
 ] as const;
 type ViewKey = (typeof VIEWS)[number]["key"];
@@ -219,6 +223,13 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
           onEdit={openEdit}
           onStatusChange={onStatusChange}
           onHide={(id) => setHidden(id, true)}
+          onChanged={refresh}
+        />
+      )}
+      {view === "projects" && (
+        <ProjectsView
+          projects={visible.filter((t) => t.type === "PROJECT")}
+          onEdit={openEdit}
           onChanged={refresh}
         />
       )}
