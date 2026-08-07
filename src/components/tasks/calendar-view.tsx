@@ -59,7 +59,7 @@ function byStartTime(a: ExternalCalendarEvent, b: ExternalCalendarEvent): number
 // Pill task: nền mờ + chữ cùng tông (desaturated theo hướng dark đã duyệt),
 // KHÔNG dùng nền đặc bão hoà như Google bản sáng.
 function chipClass(task: TaskRow): string {
-  if (task.status === "DONE") return "bg-white/5 text-faint line-through";
+  if (task.status === "DONE") return "bg-ink/5 text-faint line-through";
   if (task.priority === "CRITICAL") return "bg-critical/15 text-critical";
   if (task.priority === "HIGH") return "bg-overdue/15 text-overdue";
   return "bg-dusty/12 text-dusty";
@@ -88,7 +88,7 @@ function TaskChip({ task, variant, onSelect }: TaskChipProps) {
       type="button"
       onClick={() => onSelect(task)}
       title={task.title}
-      className={`mb-0.5 block w-full rounded text-left font-medium transition-shadow hover:ring-1 hover:ring-inset hover:ring-white/15 ${
+      className={`mb-0.5 block w-full rounded text-left font-medium transition-shadow hover:ring-1 hover:ring-inset hover:ring-ink/15 ${
         inCell ? "truncate px-1.5 py-[3px] text-[11px]" : "px-2 py-1.5 text-[12px]"
       } ${chipClass(task)}`}
     >
@@ -110,7 +110,7 @@ function EventChip({ event, variant, onSelect }: EventChipProps) {
       type="button"
       onClick={() => onSelect(event)}
       title={`${event.time ? `${event.time} — ` : ""}${event.title} — bấm để tạo task từ event Google này`}
-      className={`group mb-0.5 flex w-full items-center gap-1.5 rounded text-left text-dim transition-colors hover:bg-white/6 hover:text-text ${
+      className={`group mb-0.5 flex w-full items-center gap-1.5 rounded text-left text-dim transition-colors hover:bg-ink/6 hover:text-text ${
         inCell ? "px-1.5 py-[3px] text-[11px]" : "px-2 py-1.5 text-[12px]"
       }`}
     >
@@ -321,7 +321,7 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
                   <div
                     key={day.key}
                     className={`min-h-[116px] border-r border-hair-soft p-1.5 last:border-r-0 ${
-                      day.inMonth ? heatClass(dayTasks.length) : "bg-black/15"
+                      day.inMonth ? heatClass(dayTasks.length) : "bg-ink/[0.04]"
                     }`}
                   >
                     {/* Google đặt số ngày ở giữa đỉnh ô, hôm nay là vòng tròn đặc */}
@@ -342,7 +342,7 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
                             ? "cursor-default"
                             : isToday
                               ? "hover:bg-gold/85"
-                              : "hover:bg-white/10 hover:text-text"
+                              : "hover:bg-ink/10 hover:text-text"
                         }`}
                       >
                         {day.day}
@@ -367,7 +367,7 @@ export function CalendarView({ tasks, onEdit, onCreateFromEvent }: CalendarViewP
                         type="button"
                         onClick={() => setOpenKey(day.key)}
                         title={[...hiddenTasks.map((t) => t.title), ...hiddenEvents.map((e) => e.title)].join("\n")}
-                        className="block w-full rounded px-1.5 py-[3px] text-left text-[11px] font-medium text-faint transition-colors hover:bg-white/6 hover:text-dim"
+                        className="block w-full rounded px-1.5 py-[3px] text-left text-[11px] font-medium text-faint transition-colors hover:bg-ink/6 hover:text-dim"
                       >
                         +{hiddenCount} nữa
                       </button>

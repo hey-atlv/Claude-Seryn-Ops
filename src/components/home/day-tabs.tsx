@@ -43,7 +43,7 @@ export function DayTabs({ today, closing, initialTab }: DayTabsProps) {
             onClick={() => setTab(t.key)}
             className={`flex items-center gap-1.5 whitespace-nowrap rounded-t-md border-b-2 px-3.5 py-2 text-sm font-medium transition-colors ${
               tab === t.key
-                ? "border-gold text-[#e4d4ae]"
+                ? "border-gold text-gold-text"
                 : "border-transparent text-dim hover:text-text"
             }`}
           >

@@ -218,7 +218,7 @@ export function AssistantChatClient({ compact = false }: AssistantChatClientProp
             onClick={() => loadConversation(s.id)}
             className={`block w-full truncate rounded-md px-2 py-1.5 text-left text-xs ${
               s.id === conversationId
-                ? "bg-gold/[0.11] text-[#e4d4ae]"
+                ? "bg-gold/[0.11] text-gold-text"
                 : "text-muted hover:bg-panel-2 hover:text-text"
             }`}
             title={s.title ?? ""}

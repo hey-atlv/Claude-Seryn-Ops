@@ -32,6 +32,10 @@ export const metadata: Metadata = {
     "Hệ thống quản lý công việc & dự án — Giám đốc Marketing Seryn",
 };
 
+// Đặt theme TRƯỚC khi paint để không chớp màu: SSR mặc định dark,
+// script gỡ class nếu người dùng đã chọn light (localStorage["seryn-theme"]).
+const THEME_INIT_SCRIPT = `(function(){try{if(localStorage.getItem("seryn-theme")==="light")document.documentElement.classList.remove("dark")}catch(e){}})()`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,8 +44,19 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
+      suppressHydrationWarning
       className={`dark ${beVietnam.variable} ${cormorant.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* type="text/plain" ở client + suppressHydrationWarning: pattern trong
+            docs Next (preventing-flash-before-hydration) để React dev không
+            cảnh báo về script tag — script chỉ cần chạy lúc parse HTML. */}
+        <script
+          type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
+      </head>
       <body className="min-h-full">
         <div className="flex min-h-screen flex-col lg:flex-row">
           <Sidebar />

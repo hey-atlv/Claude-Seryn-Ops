@@ -86,7 +86,7 @@ export default async function Home({
                 <li key={p.id}>
                   <Link
                     href={`/tasks?team=${p.team}`}
-                    className="flex items-center gap-3.5 rounded-[11px] border border-hair-soft bg-panel-2 px-3.5 py-3 transition-colors hover:border-[#35353b] hover:bg-[#232328]"
+                    className="flex items-center gap-3.5 rounded-[11px] border border-hair-soft bg-panel-2 px-3.5 py-3 transition-colors hover:border-hair-hover hover:bg-panel-hover"
                   >
                     <span title={meta.label} aria-label={meta.label}>
                       {meta.icon}
@@ -134,7 +134,7 @@ export default async function Home({
               <li key={r.id}>
                 <Link
                   href="/tasks?view=team"
-                  className="flex items-center gap-3 rounded-[11px] border border-hair-soft bg-panel-2 px-3.5 py-3 transition-colors hover:border-[#35353b] hover:bg-[#232328]"
+                  className="flex items-center gap-3 rounded-[11px] border border-hair-soft bg-panel-2 px-3.5 py-3 transition-colors hover:border-hair-hover hover:bg-panel-hover"
                 >
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-text">
                     {r.title}

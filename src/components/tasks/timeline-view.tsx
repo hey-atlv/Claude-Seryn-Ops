@@ -121,7 +121,7 @@ function dayEdge(day: TimelineDay, index: number, isToday: boolean): string {
 /** Nền của một cột ngày; `strong` dành cho hàng trục (đậm hơn thân bảng) */
 function dayShade(day: TimelineDay, isToday: boolean, strong: boolean): string {
   if (isToday) return strong ? "bg-gold/15" : "bg-gold/[0.07]";
-  return day.weekend ? "bg-white/[0.02]" : "";
+  return day.weekend ? "bg-ink/[0.03]" : "";
 }
 
 // ── Nhãn ngày cạnh thanh ──────────────────────────────────────────
@@ -265,7 +265,7 @@ function TimelineRowLine({
             onClick={() => onEdit(task)}
             title={barTitle(row)}
             style={{ gridRow: 1, gridColumn: `${bar.startIndex + 1} / span ${span}` }}
-            className={`h-6 overflow-hidden ring-1 ring-inset transition-shadow hover:ring-white/35 ${tone.track} ${tone.ring} ${
+            className={`h-6 overflow-hidden ring-1 ring-inset transition-shadow hover:ring-ink/35 ${tone.track} ${tone.ring} ${
               bar.clippedStart ? "rounded-l-none" : "rounded-l-full"
             } ${bar.clippedEnd ? "rounded-r-none" : "rounded-r-full"}`}
           >

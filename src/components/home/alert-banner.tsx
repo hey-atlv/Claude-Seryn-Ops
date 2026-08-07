@@ -77,7 +77,7 @@ export function AlertBanner({ overdue, silent, staleDeps }: AlertBannerProps) {
               onClick={() => setOpenSeg(isOpen ? null : s.key)}
               aria-expanded={isOpen}
               className={`flex min-w-[150px] flex-1 items-center gap-2.5 rounded-[11px] border px-4 py-3 text-left transition-colors ${
-                isOpen ? s.activeBoxCls : "border-hair bg-panel-2 hover:border-[#35353b]"
+                isOpen ? s.activeBoxCls : "border-hair bg-panel-2 hover:border-hair-hover"
               }`}
             >
               <span

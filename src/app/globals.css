@@ -1,49 +1,103 @@
 @import "tailwindcss";
 
-/* Bật cứng dark mode dạng class: mọi biến thể `dark:` sẵn có trong app
-   (viết light-first) kích hoạt khi <html class="dark"> — không phụ thuộc
-   prefers-color-scheme của OS. Nhờ vậy toàn bộ trang cũ hiển thị dark mà
-   không phải sửa tay từng class. */
+/* Dark mode dạng class: mọi biến thể `dark:` trong app (viết light-first)
+   kích hoạt khi <html class="dark">. Theme do người dùng chọn (nút toggle
+   trên sidebar, lưu localStorage) — không phụ thuộc prefers-color-scheme. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ────────────────────────────────────────────────────────────────
-   Seryn Ops — DARK theme (tool nội bộ CMO Marketing).
-   Hướng đã duyệt 22/07/2026: dark trung tính, tương phản cao, tinh tế
-   (accent desaturated/mờ — KHÔNG vivid). Giữ tư duy hệ màu trạng thái
-   CÓ KỶ LUẬT: chỉ `critical` mới nổi nhất, còn lại hạ xuống cát/champagne.
-   Bảng màu chốt ở mockup scratchpad/seryn-dark-mockup.html.
+   Seryn Ops — 2 theme cùng 1 bộ token.
+   • LIGHT (mặc định :root): theo brand Seryn — nền warm off-white
+     #F5F2EE (KHÔNG pure white), card trắng, chữ navy #1C2B3A,
+     accent gold/rose trầm. Clinical Precision × Warm Luxury.
+   • DARK (.dark): hướng đã duyệt 22/07/2026 — dark trung tính,
+     tương phản cao, accent desaturated (KHÔNG vivid).
+   Kỷ luật màu trạng thái giữ nguyên cả 2 theme: chỉ `critical` nổi
+   nhất, còn lại hạ xuống cát/champagne.
    ──────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Nền & bề mặt phân tầng */
+  /* Nền & bề mặt phân tầng — LIGHT */
+  --bg: #f5f2ee;
+  --panel: #ffffff;
+  --panel-2: #f7f4ef;
+  --panel-3: #efebe3;
+  --border: #e3ddd2;
+  --border-soft: #eae5dc;
+  --panel-hover: #f3efe8; /* nền hover của item trên panel */
+  --border-hover: #d5cec1; /* viền đậm hơn khi hover */
+
+  /* Chữ 4 cấp + bright cho heading/brand */
+  --text: #243240;
+  --text-bright: #1c2b3a;
+  --text-dim: #55636f;
+  --muted: #83909a;
+  --faint: #a4aeb6;
+
+  /* "Mực" overlay — trắng trên dark, navy trên light (bg-ink/5, ring-ink/15…) */
+  --ink: #1c2b3a;
+
+  /* Trạng thái — bản đậm hơn để đủ tương phản trên nền sáng */
+  --critical: #c05a52; /* coral trầm — CHỈ việc critical thật */
+  --overdue: #a9762e; /* amber — quá hạn chưa critical */
+  --soon: #97783a; /* champagne đậm — sắp hạn / cần chú ý */
+  --good: #3f7d5f; /* sage đậm — đúng tiến độ / hoàn thành */
+  --idle: #83909a; /* xám ngả — im lặng / đang chờ */
+
+  /* Accent */
+  --gold: #b08d4f; /* gold Seryn nén đậm để dùng được làm chữ/viền */
+  --gold-text: #8a6a32; /* chữ gold trên nền sáng (active nav, tab) */
+  --blue: #5e7a9b; /* dusty blue trầm */
+  --rose: #b26478; /* rose trầm */
+
+  /* Hào quang nền + bóng đổ (navy-tinted theo brand) */
+  --bg-glow: #fdfbf8;
+  --sh-soft: 0 2px 12px rgba(28, 43, 58, 0.07);
+  --sh-card: 0 4px 24px rgba(28, 43, 58, 0.09);
+  --sh-elevated: 0 8px 40px rgba(28, 43, 58, 0.14);
+  --scroll-hover: #cfc8bb;
+
+  /* Tương thích token cũ */
+  --background: var(--bg);
+  --foreground: var(--text);
+}
+
+.dark {
+  /* Nền & bề mặt phân tầng — DARK */
   --bg: #131315;
   --panel: #1a1a1d;
   --panel-2: #202024;
   --panel-3: #26262b;
   --border: #2d2d33;
   --border-soft: #262629;
+  --panel-hover: #232328;
+  --border-hover: #35353b;
 
-  /* Chữ 4 cấp */
   --text: #e9e9ec;
+  --text-bright: #f4f4f6;
   --text-dim: #adadb5;
   --muted: #83838b;
   --faint: #66666d;
 
+  --ink: #ffffff;
+
   /* Trạng thái — desaturated, mờ */
-  --critical: #d98a86; /* coral mềm — CHỈ việc critical thật */
-  --overdue: #cda06a; /* amber cát — quá hạn chưa critical */
-  --soon: #c9b184; /* champagne — sắp hạn / cần chú ý */
-  --good: #86bfa2; /* sage — đúng tiến độ / hoàn thành */
-  --idle: #83838b; /* xám ngả — im lặng / đang chờ */
+  --critical: #d98a86;
+  --overdue: #cda06a;
+  --soon: #c9b184;
+  --good: #86bfa2;
+  --idle: #83838b;
 
-  /* Accent phụ */
-  --gold: #c9b184; /* champagne (accent chính của theme) */
-  --blue: #94a9cc; /* dusty blue */
-  --rose: #cf9aab; /* rose mềm */
+  --gold: #c9b184; /* champagne (accent chính của dark theme) */
+  --gold-text: #e4d4ae;
+  --blue: #94a9cc;
+  --rose: #cf9aab;
 
-  /* Tương thích token cũ (một số nơi còn dùng --background/--foreground) */
-  --background: var(--bg);
-  --foreground: var(--text);
+  --bg-glow: #1a1a1e;
+  --sh-soft: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --sh-card: 0 6px 28px rgba(0, 0, 0, 0.45);
+  --sh-elevated: 0 12px 44px rgba(0, 0, 0, 0.55);
+  --scroll-hover: #3a3a41;
 }
 
 @theme inline {
@@ -60,11 +114,30 @@
   --color-panel-3: var(--panel-3);
   --color-hair: var(--border);
   --color-hair-soft: var(--border-soft);
+  --color-panel-hover: var(--panel-hover);
+  --color-hair-hover: var(--border-hover);
 
   --color-text: var(--text);
+  --color-bright: var(--text-bright);
   --color-dim: var(--text-dim);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
+  --color-ink: var(--ink);
+
+  /* Hệ màu trạng thái + accent — đổi theo theme */
+  --color-critical: var(--critical);
+  --color-overdue: var(--overdue);
+  --color-soon: var(--soon);
+  --color-good: var(--good);
+  --color-idle: var(--idle);
+  --color-gold: var(--gold);
+  --color-gold-text: var(--gold-text);
+  --color-rose: var(--rose);
+  --color-dusty: var(--blue);
+
+  --shadow-soft: var(--sh-soft);
+  --shadow-card: var(--sh-card);
+  --shadow-elevated: var(--sh-elevated);
 }
 
 @theme {
@@ -81,55 +154,69 @@
   --color-brand-900: #111a24;
   --color-brand-950: #0b1118;
 
-  --color-gold: #c9b184;
-  --color-rose: #cf9aab;
-  --color-dusty: #94a9cc;
-
-  /* Hệ màu trạng thái — bản desaturated cho dark theme */
-  --color-critical: #d98a86;
-  --color-overdue: #cda06a;
-  --color-soon: #c9b184;
-  --color-good: #86bfa2;
-  --color-idle: #83838b;
-
-  /* Bóng đổ trên nền dark — mềm, sâu */
-  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.35);
-  --shadow-card: 0 6px 28px rgba(0, 0, 0, 0.45);
-  --shadow-elevated: 0 12px 44px rgba(0, 0, 0, 0.55);
-
   --radius-lg: 14px;
   --radius-sm: 9px;
+}
 
-  /* Remap đầu TỐI của thang zinc về đúng neutral theme, để mọi lớp
-     `dark:bg-zinc-900/800`, `dark:border-zinc-700`… của trang cũ khớp tông
-     với #131315 thay vì ngả xanh của zinc gốc. Đầu SÁNG (zinc-50..400)
-     giữ nguyên vì dùng làm chữ/muted trên nền dark vẫn đọc tốt. */
+/* ── Remap thang zinc theo theme ─────────────────────────────────
+   Trang cũ viết light-first kiểu `bg-white dark:bg-zinc-900`.
+   • LIGHT: kéo zinc về navy (đầu tối, làm chữ/nút) + warm-neutral
+     (đầu sáng, làm nền/viền) để khớp brand Seryn thay vì xám lạnh.
+   • DARK: đầu tối khớp neutral #131315 (như trước); đầu sáng trả về
+     zinc gốc vì dùng làm chữ/muted trên nền dark. */
+:root {
+  --color-zinc-950: #16222e;
+  --color-zinc-900: #1c2b3a;
+  --color-zinc-800: #2b3a49;
+  --color-zinc-700: #40505f;
+  --color-zinc-600: #5b6a77;
+  --color-zinc-500: #75828d;
+  --color-zinc-400: #93a0a9;
+  --color-zinc-300: #d3cdc2;
+  --color-zinc-200: #e3ded4;
+  --color-zinc-100: #eeeae2;
+  --color-zinc-50: #f7f4ef;
+}
+.dark {
   --color-zinc-950: #131315;
   --color-zinc-900: #1a1a1d;
   --color-zinc-800: #202024;
   --color-zinc-700: #2d2d33;
+  --color-zinc-600: #52525b;
+  --color-zinc-500: #71717a;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-50: #fafafa;
 }
 
 html {
+  color-scheme: light;
+}
+html.dark {
   color-scheme: dark;
 }
 
 body {
   min-height: 100%;
   background:
-    radial-gradient(900px 500px at 80% -10%, #1a1a1e 0%, transparent 60%),
+    radial-gradient(900px 500px at 80% -10%, var(--bg-glow) 0%, transparent 60%),
     var(--bg);
   color: var(--text);
   font-family: var(--font-be-vietnam), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
-/* Heading cấp trang: sans đậm, siết chữ (theo mockup dark, không serif).
+/* Heading cấp trang: sans đậm, siết chữ (theo mockup, không serif).
    !important để thắng class font-bold/size có sẵn trong các page. */
 h1 {
   font-weight: 700 !important;
   letter-spacing: -0.02em;
-  color: #f4f4f6;
+  color: var(--text-bright);
 }
 
 /* ── Card / panel dùng chung ──────────────────────────────────── */
@@ -154,11 +241,15 @@ h1 {
 }
 
 ::selection {
+  background: rgba(176, 141, 79, 0.25);
+  color: #1c2b3a;
+}
+.dark ::selection {
   background: rgba(201, 177, 132, 0.28);
   color: #f4f4f6;
 }
 
-/* Thanh cuộn hợp tông dark */
+/* Thanh cuộn hợp tông theme */
 * {
   scrollbar-color: var(--border) transparent;
 }
@@ -171,5 +262,5 @@ h1 {
   border-radius: 20px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a41;
+  background: var(--scroll-hover);
 }

@@ -4,23 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bot,
   CheckSquare,
-  FileDown,
   Link2,
   LogOut,
   Menu,
   NotebookPen,
-  Plus,
-  Repeat,
   Settings,
   Sun,
   X,
 } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Sidebar shell dark (thay top-nav "Khác ▾"). Desktop: cột cố định trái.
-// Mobile: top-bar + drawer trượt. Điều hướng đầy đủ + thao tác nhanh.
+// Mobile: top-bar + drawer trượt. Chỉ còn điều hướng — thao tác nhanh đã nằm
+// ở 2 nút nổi góc dưới phải (FloatingLauncher).
 
 type NavItem = {
   href: string;
@@ -33,15 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/tasks", label: "Công việc", icon: CheckSquare },
   { href: "/workspace", label: "Sổ tay", icon: NotebookPen },
   { href: "/ops", label: "Phối hợp & Báo cáo", icon: Link2 },
-  { href: "/import", label: "Import", icon: FileDown },
-  { href: "/settings/recurring", label: "Việc định kỳ", icon: Repeat },
   { href: "/settings", label: "Cài đặt", icon: Settings },
-];
-
-const QUICK_ACTIONS: { href: string; label: string; icon: React.ReactNode }[] = [
-  { href: "/tasks", label: "Thêm công việc", icon: <Plus size={13} strokeWidth={2.5} aria-hidden /> },
-  { href: "/workspace?tab=notes", label: "Ghi chú nhanh", icon: <Plus size={13} strokeWidth={2.5} aria-hidden /> },
-  { href: "/workspace?tab=assistant", label: "Hỏi Trợ lý AI", icon: <Bot size={13} strokeWidth={2.25} aria-hidden /> },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -49,8 +39,8 @@ function isActivePath(pathname: string, href: string) {
 }
 
 /**
- * Chỉ 1 mục được sáng. Với route lồng nhau (/settings/recurring nằm trong
- * /settings) thì cả hai đều khớp prefix — chọn href dài nhất, tức mục cụ thể nhất.
+ * Chỉ 1 mục được sáng. Với route lồng nhau thì nhiều mục cùng khớp prefix —
+ * chọn href dài nhất, tức mục cụ thể nhất.
  */
 function activeHref(pathname: string, items: NavItem[]): string | null {
   return items.reduce<string | null>(
@@ -65,7 +55,7 @@ function activeHref(pathname: string, items: NavItem[]): string | null {
 
 function Brand() {
   return (
-    <span className="flex select-none items-center gap-2.5 whitespace-nowrap text-[16px] font-bold tracking-wide text-[#f4f4f6]">
+    <span className="flex select-none items-center gap-2.5 whitespace-nowrap text-[16px] font-bold tracking-wide text-bright">
       <span className="inline-block h-2.5 w-2.5 rounded-full bg-gold shadow-[0_0_0_4px_rgba(201,177,132,0.16)]" />
       Seryn Ops
     </span>
@@ -88,7 +78,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             aria-current={active ? "page" : undefined}
             className={`flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[13.5px] transition-colors ${
               active
-                ? "bg-gold/[0.11] font-semibold text-[#e4d4ae]"
+                ? "bg-gold/[0.11] font-semibold text-gold-text"
                 : "text-dim hover:bg-panel-2 hover:text-text"
             }`}
           >
@@ -98,26 +88,6 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         );
       })}
     </nav>
-  );
-}
-
-function QuickActions({ onNavigate }: { onNavigate?: () => void }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      {QUICK_ACTIONS.map(({ href, label, icon }) => (
-        <Link
-          key={label}
-          href={href}
-          onClick={onNavigate}
-          className="flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[13.5px] text-dim transition-colors hover:bg-panel-2 hover:text-text"
-        >
-          <span className="grid h-5 w-5 place-items-center rounded-md bg-panel-3 text-gold">
-            {icon}
-          </span>
-          {label}
-        </Link>
-      ))}
-    </div>
   );
 }
 
@@ -160,13 +130,11 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
             <Brand />
             <p className="mt-1 text-xs text-muted">Bảng điều hành Marketing</p>
           </div>
-          <NotificationBell />
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
         </div>
-      </div>
-
-      <div className="rounded-[14px] border border-hair bg-panel p-4">
-        <SectionLabel>📌 Thao tác nhanh</SectionLabel>
-        <QuickActions onNavigate={onNavigate} />
       </div>
 
       <div className="rounded-[14px] border border-hair bg-panel p-4">
@@ -210,7 +178,8 @@ export function Sidebar() {
           <Menu size={18} aria-hidden />
         </button>
         <Brand />
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1.5">
+          <ThemeToggle />
           <NotificationBell />
         </div>
       </header>

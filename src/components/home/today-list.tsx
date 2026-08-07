@@ -63,7 +63,7 @@ function Row({ task }: { task: TodayTaskRow }) {
   }
 
   return (
-    <li className="flex items-center gap-3 rounded-[11px] border border-hair-soft bg-panel-2 px-3.5 py-3 transition-colors hover:border-[#35353b] hover:bg-[#232328]">
+    <li className="flex items-center gap-3 rounded-[11px] border border-hair-soft bg-panel-2 px-3.5 py-3 transition-colors hover:border-hair-hover hover:bg-panel-hover">
       <span
         className={`w-[3px] self-stretch flex-none rounded ${STRIPE_CLS[tone]}`}
         aria-hidden

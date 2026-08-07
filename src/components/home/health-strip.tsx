@@ -80,7 +80,7 @@ function Kpi({
   );
 
   const shell = `rounded-[13px] border p-3.5 text-left transition-colors ${
-    open ? "border-gold bg-panel-2" : "border-hair bg-panel hover:border-[#35353b]"
+    open ? "border-gold bg-panel-2" : "border-hair bg-panel hover:border-hair-hover"
   }`;
 
   if (!onClick) {

@@ -10,7 +10,7 @@ import { AssistantChatClient } from "@/components/assistant/assistant-chat-clien
 // song song với trang đầy đủ /assistant và /notes (không thay thế nav).
 
 const FAB_BASE =
-  "flex h-11 w-11 items-center justify-center rounded-full shadow-elevated transition-colors";
+  "flex h-16 w-16 items-center justify-center rounded-full shadow-elevated transition-colors";
 const FAB_IDLE =
   "border border-hair bg-panel text-dim hover:bg-panel-2 hover:text-text";
 const FAB_ACTIVE = "border border-gold/30 bg-gold/20 text-gold hover:bg-gold/25";
@@ -42,7 +42,7 @@ export function FloatingLauncher() {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => setNotesOpen((v) => !v)}
@@ -51,7 +51,7 @@ export function FloatingLauncher() {
           title="Ghi chú nhanh"
           className={`${FAB_BASE} ${notesOpen ? FAB_ACTIVE : FAB_IDLE}`}
         >
-          <StickyNote size={19} aria-hidden />
+          <StickyNote size={27} strokeWidth={1.9} aria-hidden />
         </button>
         <button
           type="button"
@@ -61,7 +61,7 @@ export function FloatingLauncher() {
           title="Trợ lý AI"
           className={`${FAB_BASE} ${assistantOpen ? FAB_ACTIVE : FAB_IDLE}`}
         >
-          <Bot size={19} aria-hidden />
+          <Bot size={27} strokeWidth={1.9} aria-hidden />
         </button>
       </div>
     </div>
