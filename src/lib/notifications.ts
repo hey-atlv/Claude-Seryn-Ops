@@ -5,8 +5,10 @@ import type { NotifyItem } from "./notify-core";
 
 // F1 — quét task đang mở, sinh danh sách nhắc việc theo 3 tầng:
 // CRITICAL: mọi task Critical đang mở
-// HIGH: task Cao đã quá hạn hoặc sắp đến hạn (≤2 ngày)
-// NORMAL: task thường có deadline đúng ngày mai (nhắc 1 ngày trước)
+// HIGH: task quá hạn (mọi ưu tiên), kẹt duyệt REVIEW ≥2 ngày,
+//       hoặc task Cao sắp đến hạn (≤2 ngày)
+// NORMAL: task có deadline hôm nay hoặc ngày mai
+// Mỗi task chỉ sinh đúng 1 thông báo — nhánh đầu tiên khớp thắng.
 
 const TIER_ORDER: Record<NotifyItem["tier"], number> = {
   CRITICAL: 0,
@@ -30,6 +32,11 @@ export async function getNotifications(
       ? `deadline ${formatVN(t.deadline, "dd/MM")}`
       : "chưa có deadline";
 
+    const reviewDays = Math.floor(
+      (now.getTime() - t.updatedAt.getTime()) / 86_400_000,
+    );
+    const dueDays = t.deadline ? daysUntilVN(t.deadline, now) : null;
+
     if (t.priority === "CRITICAL") {
       items.push({
         id: `crit-${t.id}`,
@@ -38,28 +45,37 @@ export async function getNotifications(
         detail: `Critical · ${who} · ${deadlineTxt}`,
         href: "/tasks",
       });
-    } else if (
-      t.priority === "HIGH" &&
-      (alert === "OVERDUE" || alert === "DUE_SOON")
-    ) {
+    } else if (t.status === "REVIEW" && reviewDays >= 2) {
+      items.push({
+        id: `review-${t.id}`,
+        tier: "HIGH",
+        title: `⏳ Kẹt duyệt ${reviewDays} ngày: ${t.title}`,
+        detail: `Chờ sếp quyết · ${who} · ${deadlineTxt}`,
+        href: "/tasks",
+      });
+    } else if (alert === "OVERDUE") {
+      items.push({
+        id: `over-${t.id}`,
+        tier: "HIGH",
+        title: `⏰ Quá hạn: ${t.title}`,
+        detail: `${who} · ${deadlineTxt}`,
+        href: "/tasks",
+      });
+    } else if (t.priority === "HIGH" && alert === "DUE_SOON") {
       items.push({
         id: `high-${t.id}`,
         tier: "HIGH",
-        title: `${alert === "OVERDUE" ? "⏰ Quá hạn" : "🟡 Sắp hạn"}: ${t.title}`,
+        title: `🟡 Sắp hạn: ${t.title}`,
         detail: `Ưu tiên cao · ${who} · ${deadlineTxt}`,
         href: "/tasks",
       });
-    } else if (
-      t.priority === "NORMAL" &&
-      t.deadline &&
-      daysUntilVN(t.deadline, now) === 1
-    ) {
+    } else if (t.deadline && (dueDays === 0 || dueDays === 1)) {
       items.push({
         // id kèm ngày deadline → đổi deadline là nhắc lại như thông báo mới
         id: `due-${t.id}-${formatVN(t.deadline, "yyyy-MM-dd")}`,
         tier: "NORMAL",
         title: `📅 ${t.title}`,
-        detail: `Deadline ngày mai · ${who}`,
+        detail: `Deadline ${dueDays === 0 ? "hôm nay" : "ngày mai"} · ${who}`,
         href: "/tasks?view=calendar",
       });
     }

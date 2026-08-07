@@ -47,17 +47,33 @@ export function EisenhowerView({ tasks, onEdit }: EisenhowerViewProps) {
   for (const q of QUADRANTS)
     grouped[q].sort((a, b) => b.priorityScore - a.priorityScore);
 
+  // Việc quá hạn ưu tiên thường rơi vào Giao việc/Theo dõi theo đúng logic
+  // Eisenhower — nhưng CMO liếc ô "Làm ngay" trống sẽ tưởng không có gì gấp,
+  // nên đếm riêng để cảnh báo ngay trên đầu ma trận.
+  const overdueOutsideDo = tasks.filter(
+    (t) => t.alertStatus === "OVERDUE" && classify(t) !== "DO",
+  ).length;
+
   return (
     <div className="space-y-2">
       <p className="text-xs text-zinc-600 dark:text-zinc-400">
         Khẩn = Critical / quá hạn / sắp hạn ≤2 ngày · Quan trọng = ưu tiên Cao,
         Critical hoặc ảnh hưởng doanh thu Cao
       </p>
+      {overdueOutsideDo > 0 && (
+        <p className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          ⚠️ {overdueOutsideDo} việc quá hạn đang nằm ngoài ô “Làm ngay” (xem
+          badge đỏ ở từng ô) — đừng bỏ sót khi lướt nhanh.
+        </p>
+      )}
       <div className="grid gap-3 lg:grid-cols-2">
         {QUADRANTS.map((q) => {
           const meta = QUADRANT_META[q];
           const style = QUADRANT_STYLE[q];
           const items = grouped[q];
+          const overdue = items.filter(
+            (t) => t.alertStatus === "OVERDUE",
+          ).length;
           return (
             <section
               key={q}
@@ -67,6 +83,11 @@ export function EisenhowerView({ tasks, onEdit }: EisenhowerViewProps) {
                 <span className="text-sm font-bold">
                   {meta.title} ({items.length})
                 </span>
+                {overdue > 0 && q !== "DO" && (
+                  <span className="ml-2 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">
+                    🔴 {overdue} quá hạn
+                  </span>
+                )}
                 <span className="ml-2 text-xs opacity-90">{meta.hint}</span>
               </header>
               <div className="max-h-80 space-y-1 overflow-y-auto p-2">

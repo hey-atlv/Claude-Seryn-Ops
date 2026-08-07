@@ -113,7 +113,12 @@ export async function getTodayData(now: Date = new Date()): Promise<TodayData> {
   const projects = open
     .filter((t) => t.type === "PROJECT")
     .map((p) => {
-      const light = projectLight(p.subItems, p.lastUpdateAt ?? p.updatedAt, now);
+      const light = projectLight(
+        p.subItems,
+        p.lastUpdateAt ?? p.updatedAt,
+        p.deadline,
+        now,
+      );
       const prog = projectProgress(p.subItems);
       return {
         id: p.id,

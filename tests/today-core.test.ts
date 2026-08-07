@@ -87,14 +87,14 @@ const sub = (over: {
 describe("projectLight — đèn khối ③", () => {
   it("🔴 khi mọi sub-item không nhích quá 14 ngày", () => {
     const subs = [sub({ movedDaysAgo: 20 }), sub({ movedDaysAgo: 15 })];
-    expect(projectLight(subs, new Date(0), NOW)).toBe("RED");
+    expect(projectLight(subs, new Date(0), null, NOW)).toBe("RED");
   });
 
   it("🔴 thắng 🟡 khi vừa đứng im vừa có việc con trễ", () => {
     const subs = [
       sub({ movedDaysAgo: 20, deadline: endOfDayVN("2026-07-01") }),
     ];
-    expect(projectLight(subs, new Date(0), NOW)).toBe("RED");
+    expect(projectLight(subs, new Date(0), null, NOW)).toBe("RED");
   });
 
   it("🟡 khi có việc con chưa xong đã trễ deadline (nhưng vẫn nhích)", () => {
@@ -102,28 +102,55 @@ describe("projectLight — đèn khối ③", () => {
       sub({ movedDaysAgo: 2, deadline: endOfDayVN("2026-07-19") }),
       sub({ movedDaysAgo: 30, status: "DONE" }),
     ];
-    expect(projectLight(subs, new Date(0), NOW)).toBe("YELLOW");
+    expect(projectLight(subs, new Date(0), null, NOW)).toBe("YELLOW");
   });
 
   it("việc con trễ nhưng đã DONE thì không tính 🟡", () => {
     const subs = [
       sub({ movedDaysAgo: 1, status: "DONE", deadline: endOfDayVN("2026-07-10") }),
     ];
-    expect(projectLight(subs, new Date(0), NOW)).toBe("GREEN");
+    expect(projectLight(subs, new Date(0), null, NOW)).toBe("GREEN");
   });
 
   it("completedAt mới cũng tính là nhích", () => {
     const stale = sub({ movedDaysAgo: 30 });
     const subs = [{ ...stale, completedAt: new Date(NOW.getTime() - DAY_MS) }];
-    expect(projectLight(subs, new Date(0), NOW)).toBe("GREEN");
+    expect(projectLight(subs, new Date(0), null, NOW)).toBe("GREEN");
+  });
+
+  it("🔴 khi deadline của chính project đã qua mà còn việc con chưa xong", () => {
+    const subs = [sub({ movedDaysAgo: 1 })]; // vẫn nhích, không đứng im
+    expect(
+      projectLight(subs, new Date(0), endOfDayVN("2026-07-19"), NOW),
+    ).toBe("RED");
+  });
+
+  it("🔴 khi deadline project đã qua và chưa có sub-item nào", () => {
+    expect(
+      projectLight([], NOW, endOfDayVN("2026-07-19"), NOW),
+    ).toBe("RED");
+  });
+
+  it("deadline project đã qua nhưng mọi sub-item DONE → không 🔴 vì deadline", () => {
+    const subs = [sub({ movedDaysAgo: 1, status: "DONE" })];
+    expect(
+      projectLight(subs, new Date(0), endOfDayVN("2026-07-19"), NOW),
+    ).toBe("GREEN");
+  });
+
+  it("deadline project còn ở tương lai → giữ luật cũ", () => {
+    const subs = [sub({ movedDaysAgo: 1 })];
+    expect(
+      projectLight(subs, new Date(0), endOfDayVN("2026-07-30"), NOW),
+    ).toBe("GREEN");
   });
 
   it("chưa có sub-item → xét mốc của chính project", () => {
     expect(
-      projectLight([], new Date(NOW.getTime() - 20 * DAY_MS), NOW),
+      projectLight([], new Date(NOW.getTime() - 20 * DAY_MS), null, NOW),
     ).toBe("RED");
     expect(
-      projectLight([], new Date(NOW.getTime() - 3 * DAY_MS), NOW),
+      projectLight([], new Date(NOW.getTime() - 3 * DAY_MS), null, NOW),
     ).toBe("GREEN");
   });
 });

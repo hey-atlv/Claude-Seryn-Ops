@@ -20,8 +20,10 @@ export function FloatingLauncher() {
   const [notesOpen, setNotesOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-0 right-0 z-50 flex flex-col items-end gap-2 p-4">
-      <div className="flex flex-row-reverse items-end gap-3">
+    // pointer-events-none: container phủ góc phải dưới nhưng không được nuốt
+    // click của nội dung bên dưới (VD nút gửi chat) — chỉ nút/panel nhận click.
+    <div className="pointer-events-none fixed bottom-0 right-0 z-50 flex flex-col items-end gap-2 p-4">
+      <div className="pointer-events-auto flex flex-row-reverse items-end gap-3">
         {assistantOpen && (
           <FloatingPanel
             title="Trợ lý AI"
@@ -42,7 +44,7 @@ export function FloatingLauncher() {
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="pointer-events-auto flex items-center gap-3">
         <button
           type="button"
           onClick={() => setNotesOpen((v) => !v)}

@@ -43,7 +43,7 @@ export const PROJECT_LIGHT_META: Record<
   ProjectLight,
   { icon: string; label: string }
 > = {
-  RED: { icon: "🔴", label: "2 tuần không nhích" },
+  RED: { icon: "🔴", label: "Trễ hạn / đứng im lâu" },
   YELLOW: { icon: "🟡", label: "Có việc con trễ" },
   GREEN: { icon: "🟢", label: "Ổn" },
 };
@@ -57,16 +57,29 @@ export interface ProjectSubInput {
 
 /**
  * Đèn tiến độ dự án (khối ③):
- * 🔴 nếu mốc nhích gần nhất (max updatedAt/completedAt của sub-items,
- *    fallback mốc của chính project khi chưa có sub-item) quá 14 ngày
+ * 🔴 nếu deadline của chính project đã qua mà còn việc con chưa xong
+ *    (hoặc chưa có việc con nào), hoặc mốc nhích gần nhất (max
+ *    updatedAt/completedAt của sub-items, fallback mốc của chính project
+ *    khi chưa có sub-item) quá 14 ngày
  * 🟡 nếu có việc con chưa xong đã quá deadline
  * 🟢 còn lại. RED thắng YELLOW.
  */
 export function projectLight(
   subItems: ProjectSubInput[],
   projectMovedAt: Date,
+  projectDeadline: Date | null = null,
   now: Date = new Date(),
 ): ProjectLight {
+  const allDone =
+    subItems.length > 0 && subItems.every((s) => s.status === "DONE");
+  if (
+    projectDeadline &&
+    projectDeadline.getTime() < now.getTime() &&
+    !allDone
+  ) {
+    return "RED";
+  }
+
   let lastMoved = subItems.length === 0 ? projectMovedAt.getTime() : 0;
   for (const s of subItems) {
     lastMoved = Math.max(

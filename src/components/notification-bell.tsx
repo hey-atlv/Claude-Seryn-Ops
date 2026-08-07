@@ -10,8 +10,9 @@ import {
 } from "@/lib/notify-core";
 
 // F1 — Chuông nhắc việc trong header: fetch /api/notifications khi mở app
-// + mỗi 5 phút. Badge CHỈ đếm tier CRITICAL đến hạn nhắc (phương án 15 phút —
-// đỡ nhiễu); dropdown vẫn xem được tất cả. Mở dropdown = đã xem (ghi lastShown).
+// + mỗi 5 phút. Badge đếm tier CRITICAL + HIGH đến hạn nhắc (quá hạn/kẹt duyệt
+// phải nhìn thấy ngay); NORMAL chỉ hiện trong dropdown cho đỡ nhiễu.
+// Mở dropdown = đã xem (ghi lastShown).
 
 const POLL_MS = 5 * 60_000;
 const STORAGE_KEY = "seryn-notify-last-shown";
@@ -78,7 +79,7 @@ export function NotificationBell() {
         Date.now(),
         isAppOpen ? { alwaysTiers: ["CRITICAL"] } : undefined,
       );
-      setDueCount(due.filter((it) => it.tier === "CRITICAL").length);
+      setDueCount(due.filter((it) => it.tier !== "NORMAL").length);
     }
 
     refresh(true); // mỗi lần mở app — Critical luôn nhắc lại
