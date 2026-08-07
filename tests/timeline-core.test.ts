@@ -46,6 +46,7 @@ function task(overrides: Partial<TaskRow> & { id: string }): TaskRow {
     outputLink: null,
     note: null,
     hiddenAt: null,
+    completedAt: null,
     createdAt: startVN("2026-08-01"),
     priorityScore: 0,
     alertStatus: "NO_DEADLINE",

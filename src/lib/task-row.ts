@@ -29,6 +29,7 @@ export interface TaskRow {
   note: string | null;
   hiddenAt: string | null; // != null → đã ẩn khỏi 3 view của /tasks (không xóa)
   createdAt: string;
+  completedAt: string | null; // mốc chốt xong — tính % đúng hạn ở view Theo người
   priorityScore: number;
   alertStatus: AlertStatus;
   isSilent: boolean;

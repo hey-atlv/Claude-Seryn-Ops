@@ -163,6 +163,7 @@ export default async function Home({
         weekKey={d.weekKey}
         weekLabel={d.weekLabel}
         initial={d.weeklyStat}
+        history={d.weeklyHistory}
       />
     </div>
   );

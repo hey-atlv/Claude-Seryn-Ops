@@ -47,6 +47,14 @@ export interface WeeklyStatRow {
   note: string | null;
 }
 
+// P1-e — điểm dữ liệu lịch sử cho sparkline xu hướng cạnh ô nhập chỉ số tuần
+export interface WeeklyStatPoint {
+  weekKey: string; // "2026-W30"
+  revenue: number | null;
+  planPct: number | null;
+  roas: number | null;
+}
+
 export interface TodayData {
   generatedNow: number;
   overdue: BannerItemRow[];
@@ -58,4 +66,5 @@ export interface TodayData {
   weekKey: string; // "2026-W30"
   weekLabel: string; // "tuần 30/2026"
   weeklyStat: WeeklyStatRow | null;
+  weeklyHistory: WeeklyStatPoint[]; // ≤8 tuần gần nhất, cũ → mới
 }

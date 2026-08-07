@@ -11,6 +11,7 @@ import {
   FolderKanban,
   Grid2x2,
   Plus,
+  Users,
 } from "lucide-react";
 import { TEAM_LABELS, TEAMS, type TaskStatus, type Team } from "@/lib/constants";
 import type { ExternalCalendarEvent } from "@/lib/google-calendar-core";
@@ -19,8 +20,10 @@ import type { TaskRow, TasksPageData } from "@/lib/task-row";
 import { CalendarView } from "./calendar-view";
 import { EisenhowerView } from "./eisenhower-view";
 import { HiddenTasksDialog } from "./hidden-tasks-dialog";
+import { PeopleView } from "./people-view";
 import { ProjectsView } from "./projects-view";
 import { patchTask } from "./task-api";
+import { TaskDetailDrawer } from "./task-detail-drawer";
 import { TaskForm } from "./task-form";
 import { TeamBoard } from "./team-board";
 import { TimelineView } from "./timeline-view";
@@ -33,6 +36,7 @@ import { TimelineView } from "./timeline-view";
 const VIEWS = [
   { key: "matrix", label: "Ma trận", icon: Grid2x2 },
   { key: "team", label: "Theo Team", icon: Columns3 },
+  { key: "people", label: "Theo người", icon: Users },
   { key: "projects", label: "Dự án", icon: FolderKanban },
   { key: "calendar", label: "Calendar", icon: CalendarDays },
 ] as const;
@@ -86,6 +90,18 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
   const refresh = () => router.refresh();
   const openCreate = () => setForm({ open: true, task: null });
   const openEdit = (t: TaskRow) => setForm({ open: true, task: t });
+
+  // P1-a — click task ở mọi view mở drawer chi tiết (lưu id để refresh xong
+  // drawer tự hiện dữ liệu mới); nút "Sửa chi tiết" trong drawer mới mở form.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detailTask = detailId
+    ? (tasks.find((t) => t.id === detailId) ?? null)
+    : null;
+  const openDetail = (t: TaskRow) => setDetailId(t.id);
+  const editFromDrawer = (t: TaskRow) => {
+    setDetailId(null);
+    openEdit(t);
+  };
   const openCreateFromEvent = (e: ExternalCalendarEvent) =>
     setForm({
       open: true,
@@ -213,31 +229,42 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
       {view === "matrix" && (
         <div className="space-y-5">
           {/* Toàn cảnh tháng trước, rồi mới tới việc phải xử lý hôm nay */}
-          <TimelineView tasks={visible} onEdit={openEdit} />
-          <EisenhowerView tasks={openTasks} onEdit={openEdit} />
+          <TimelineView tasks={visible} onEdit={openDetail} />
+          <EisenhowerView tasks={openTasks} onEdit={openDetail} />
         </div>
       )}
       {view === "team" && (
         <TeamBoard
           tasks={visible}
-          onEdit={openEdit}
+          onEdit={openDetail}
           onStatusChange={onStatusChange}
           onHide={(id) => setHidden(id, true)}
           onChanged={refresh}
         />
       )}
+      {view === "people" && (
+        <PeopleView tasks={visible} onOpen={openDetail} />
+      )}
       {view === "projects" && (
         <ProjectsView
           projects={visible.filter((t) => t.type === "PROJECT")}
-          onEdit={openEdit}
+          onEdit={openDetail}
           onChanged={refresh}
         />
       )}
       {view === "calendar" && (
         <CalendarView
           tasks={visible}
-          onEdit={openEdit}
+          onEdit={openDetail}
           onCreateFromEvent={openCreateFromEvent}
+        />
+      )}
+      {detailTask && (
+        <TaskDetailDrawer
+          task={detailTask}
+          onClose={() => setDetailId(null)}
+          onEdit={editFromDrawer}
+          onChanged={refresh}
         />
       )}
       {hiddenOpen && (

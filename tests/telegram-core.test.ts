@@ -4,9 +4,11 @@ import type { NotifyItem } from "../src/lib/notify-core";
 import {
   buildAlertMessage,
   buildEodMessage,
+  buildMorningMessage,
   draftFromTelegramText,
   isAuthorizedChat,
   shouldSendEodSummary,
+  shouldSendMorningBrief,
 } from "../src/lib/telegram-core";
 
 describe("isAuthorizedChat", () => {
@@ -105,6 +107,59 @@ describe("buildEodMessage", () => {
     const msg = buildEodMessage(summary);
     expect(msg).toContain("Chốt ngân sách Q3");
     expect(msg).toContain("Ất");
+  });
+});
+
+describe("shouldSendMorningBrief — P1-d", () => {
+  it("trước 07:30 → chưa gửi", () => {
+    expect(shouldSendMorningBrief("07:29", "2026-08-07", null)).toBe(false);
+  });
+
+  it("từ 07:30, chưa gửi hôm nay → gửi", () => {
+    expect(shouldSendMorningBrief("07:30", "2026-08-07", null)).toBe(true);
+    expect(shouldSendMorningBrief("09:00", "2026-08-07", "2026-08-06")).toBe(
+      true,
+    );
+  });
+
+  it("đã gửi hôm nay → không gửi lại", () => {
+    expect(shouldSendMorningBrief("08:00", "2026-08-07", "2026-08-07")).toBe(
+      false,
+    );
+  });
+});
+
+describe("buildMorningMessage — P1-d", () => {
+  const emptySummary: DailySummary = {
+    doneToday: [],
+    inProgress: [],
+    overdue: [],
+    dueSoon: [],
+    topTomorrow: null,
+  };
+
+  it("rỗng → vẫn đủ 3 nhóm sáng, không có mục ưu tiên", () => {
+    const msg = buildMorningMessage(emptySummary);
+    expect(msg).toContain("Bản tin sáng");
+    expect(msg).toContain("Quá hạn — hỏi leader ngay (0)");
+    expect(msg).toContain("Đến hạn ≤2 ngày (0)");
+    expect(msg).toContain("Đang làm (0)");
+    expect(msg).not.toContain("Việc quan trọng nhất hôm nay");
+  });
+
+  it("có việc ưu tiên → hiện tên + leader", () => {
+    const summary: DailySummary = {
+      ...emptySummary,
+      topTomorrow: {
+        id: "t1",
+        title: "Chốt ngân sách Q3",
+        leader: { id: "l1", name: "Ất", team: "DIGITAL", chatHandle: null },
+        deadline: new Date("2026-07-23T23:59:59+07:00"),
+      } as DailySummary["topTomorrow"],
+    };
+    const msg = buildMorningMessage(summary);
+    expect(msg).toContain("Việc quan trọng nhất hôm nay");
+    expect(msg).toContain("Chốt ngân sách Q3");
   });
 });
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileDown, Send } from "lucide-react";
+import { FileDown, Send, Wand2, X } from "lucide-react";
 import { apiCall } from "@/lib/api-client";
 import {
   REPORT_STATUS_LABELS,
@@ -37,6 +37,42 @@ export function ReportsClient({ reports }: ReportsClientProps) {
   );
   const [sending, setSending] = useState<string | null>(null);
   const [sendMsg, setSendMsg] = useState<string | null>(null);
+
+  // P1-c — nháp tự sinh từ dữ liệu DB: modal xem + copy, checklist tự tick
+  const [drafting, setDrafting] = useState<string | null>(null);
+  const [draftModal, setDraftModal] = useState<{
+    title: string;
+    text: string;
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function makeDraft(r: ReportRow) {
+    setDrafting(r.id);
+    setSendMsg(null);
+    const res = await apiCall<{ draft: string }>(
+      `/api/reports/${r.id}/draft`,
+      "POST",
+    );
+    setDrafting(null);
+    if (!res.success || !res.data) {
+      setSendMsg(`⚠️ ${res.error ?? "Không dựng được nháp"}`);
+      return;
+    }
+    setCopied(false);
+    setDraftModal({ title: r.title, text: res.data.draft });
+    router.refresh(); // checklist/status vừa được tự cập nhật
+  }
+
+  async function copyDraft() {
+    if (!draftModal) return;
+    try {
+      await navigator.clipboard.writeText(draftModal.text);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+      window.alert("Không copy được — hãy bôi đen và copy thủ công");
+    }
+  }
 
   async function sendTelegram(reportId: string) {
     setSending(reportId);
@@ -155,6 +191,15 @@ export function ReportsClient({ reports }: ReportsClientProps) {
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5">
                       <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => makeDraft(r)}
+                          disabled={drafting === r.id}
+                          title="Điền tự động từ dữ liệu"
+                          className="rounded-md border border-zinc-300 p-1.5 text-zinc-600 hover:border-brand-500 hover:text-brand-800 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-400"
+                        >
+                          <Wand2 size={14} strokeWidth={2.25} aria-hidden />
+                        </button>
                         <a
                           href={`/api/export/pdf?type=report&id=${r.id}`}
                           title="Xuất PDF"
@@ -190,6 +235,48 @@ export function ReportsClient({ reports }: ReportsClientProps) {
             router.refresh();
           }}
         />
+      )}
+
+      {draftModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Đóng"
+            onClick={() => setDraftModal(null)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-2xl dark:bg-zinc-900">
+            <header className="flex items-center gap-2 border-b border-zinc-200 p-3 dark:border-zinc-800">
+              <h3 className="min-w-0 flex-1 truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                🪄 Nháp: {draftModal.title}
+              </h3>
+              <button
+                type="button"
+                onClick={copyDraft}
+                className="rounded-md bg-brand-700 px-3 py-1 text-xs font-semibold text-white hover:bg-brand-800"
+              >
+                {copied ? "✓ Đã copy" : "Copy markdown"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraftModal(null)}
+                title="Đóng"
+                className="rounded-md p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <X size={15} aria-hidden />
+              </button>
+            </header>
+            <textarea
+              readOnly
+              value={draftModal.text}
+              className="min-h-72 flex-1 resize-none bg-transparent p-3 font-mono text-xs text-zinc-800 focus:outline-none dark:text-zinc-200"
+            />
+            <p className="border-t border-zinc-200 px-3 py-2 text-xs text-zinc-500 dark:border-zinc-800">
+              Checklist đã tự tick theo dữ liệu — dán nháp vào Google Docs, sửa
+              rồi gắn link vào cột Link.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

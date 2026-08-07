@@ -17,9 +17,11 @@ import { extractText } from "../src/lib/inbox-parse";
 import { getCombinedAlerts } from "../src/lib/telegram-alerts";
 import { filterDue } from "../src/lib/notify-core";
 import {
+  buildMorningMessage,
   draftFromTelegramText,
   isAuthorizedChat,
   shouldSendEodSummary,
+  shouldSendMorningBrief,
 } from "../src/lib/telegram-core";
 import { formatVN } from "../src/lib/timezone";
 
@@ -230,6 +232,23 @@ async function tick(): Promise<void> {
     }
   } catch (err) {
     await logError("Lỗi gửi cảnh báo", err);
+  }
+
+  // P1-d — bản tin sáng 07:30: CMO nắm quá hạn/sắp hạn/đang làm trước khi mở máy
+  try {
+    const nowHHmm = formatVN(now, "HH:mm");
+    const todayVN = formatVN(now, "yyyy-MM-dd");
+    if (shouldSendMorningBrief(nowHHmm, todayVN, state?.lastMorningDate ?? null)) {
+      const summary = await getDailySummary(now);
+      await bot.api.sendMessage(chatId, buildMorningMessage(summary));
+      await prisma.telegramState.upsert({
+        where: { id: TELEGRAM_STATE_ID },
+        create: { id: TELEGRAM_STATE_ID, lastMorningDate: todayVN },
+        update: { lastMorningDate: todayVN },
+      });
+    }
+  } catch (err) {
+    await logError("Lỗi gửi bản tin sáng", err);
   }
 
   try {

@@ -46,6 +46,7 @@ function toTaskRow(
     note: task.note,
     hiddenAt: iso(task.hiddenAt),
     createdAt: task.createdAt.toISOString(),
+    completedAt: iso(task.completedAt),
     priorityScore: priorityScore(task, now),
     alertStatus: alertStatus(task, now),
     isSilent: isSilent(task, now),

@@ -94,6 +94,38 @@ export function buildEodMessage(summary: DailySummary): string {
   return parts.join("\n\n");
 }
 
+/**
+ * P1-d — gửi bản tin sáng đúng 1 lần/ngày, từ 07:30 giờ VN trở đi.
+ * Cùng cơ chế debounce với tóm tắt cuối ngày (lastMorningDate !== todayVN).
+ */
+export function shouldSendMorningBrief(
+  nowHHmm: string,
+  todayVN: string,
+  lastMorningDate: string | null,
+): boolean {
+  return nowHHmm >= "07:30" && lastMorningDate !== todayVN;
+}
+
+/**
+ * P1-d — format bản tin sáng cho CMO: việc quan trọng nhất, quá hạn,
+ * sắp hạn, đang làm — nắm tình hình trước khi mở máy.
+ */
+export function buildMorningMessage(summary: DailySummary): string {
+  const parts = ["☀️ Bản tin sáng — Seryn Ops"];
+
+  if (summary.topTomorrow) {
+    parts.push(
+      `⭐ Việc quan trọng nhất hôm nay:\n${taskLine(summary.topTomorrow)}`,
+    );
+  }
+
+  parts.push(group("🔴 Quá hạn — hỏi leader ngay", summary.overdue, "không có, tốt!"));
+  parts.push(group("⚠️ Đến hạn ≤2 ngày", summary.dueSoon, "không có"));
+  parts.push(group("🔄 Đang làm", summary.inProgress, "không có"));
+
+  return parts.join("\n\n");
+}
+
 /** I1 — tách deadline khỏi text/caption nhận từ Telegram, tái dùng H3. */
 export function draftFromTelegramText(text: string): QuickCaptureDraft {
   return guessDraftFromLine(text.trim());

@@ -39,7 +39,7 @@ export async function getTodayData(now: Date = new Date()): Promise<TodayData> {
   );
   const weekKey = periodKey("WEEKLY", now);
 
-  const [tasks, staleDeps, stat] = await Promise.all([
+  const [tasks, staleDeps, stat, statHistory] = await Promise.all([
     prisma.task.findMany({
       where: { parentId: null },
       include: { leader: true, subItems: true },
@@ -54,6 +54,8 @@ export async function getTodayData(now: Date = new Date()): Promise<TodayData> {
       orderBy: { createdAt: "asc" },
     }),
     prisma.weeklyStat.findUnique({ where: { weekKey } }),
+    // P1-e — 8 tuần gần nhất cho sparkline (weekKey "yyyy-Www" sort lexical đúng)
+    prisma.weeklyStat.findMany({ orderBy: { weekKey: "desc" }, take: 8 }),
   ]);
 
   const open = tasks.filter((t) => t.status !== "DONE");
@@ -162,5 +164,13 @@ export async function getTodayData(now: Date = new Date()): Promise<TodayData> {
           note: stat.note,
         }
       : null,
+    weeklyHistory: statHistory
+      .map((s) => ({
+        weekKey: s.weekKey,
+        revenue: s.revenue,
+        planPct: s.planPct,
+        roas: s.roas,
+      }))
+      .reverse(), // desc → cũ trước, mới sau cho sparkline
   };
 }

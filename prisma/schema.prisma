@@ -202,6 +202,7 @@ model TelegramState {
   id            String   @id @default("default")
   lastShownJson String? // JSON Record<string, number> — mốc gửi gần nhất theo NotifyItem.id
   lastEodDate   String? // "yyyy-MM-dd" giờ VN — ngày cuối đã gửi tóm tắt cuối ngày
+  lastMorningDate String? // "yyyy-MM-dd" giờ VN — ngày cuối đã gửi bản tin sáng
   lastError     String?
   updatedAt     DateTime @updatedAt
 }
