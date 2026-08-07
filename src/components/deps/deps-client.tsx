@@ -76,7 +76,7 @@ export function DepsClient({ deps }: DepsClientProps) {
       </nav>
 
       {view === "board" && (
-        <DepBoard deps={deps} onEdit={openEdit} onChanged={refresh} />
+        <DepBoard deps={deps} onEdit={openEdit} onChanged={refresh} onCreate={() => setForm({ open: true, dep: null })} />
       )}
       {view === "stale" && (
         <DepTable

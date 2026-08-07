@@ -49,9 +49,11 @@ interface TasksClientProps {
   data: TasksPageData;
   initialView?: string;
   initialTeam?: string;
+  initialTaskId?: string; // P2 — deep-link từ command palette: mở drawer ngay
+  initialNew?: boolean; // P2 — /tasks?new=1 mở form tạo task
 }
 
-export function TasksClient({ data, initialView, initialTeam }: TasksClientProps) {
+export function TasksClient({ data, initialView, initialTeam, initialTaskId, initialNew }: TasksClientProps) {
   const router = useRouter();
   const [view, setView] = useState<ViewKey>(
     isViewKey(initialView) ? initialView : "matrix",
@@ -66,7 +68,7 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
     task: TaskRow | null;
     initial?: { title: string; deadlineDate: string };
   }>({
-    open: false,
+    open: initialNew ?? false,
     task: null,
   });
 
@@ -93,7 +95,19 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
 
   // P1-a — click task ở mọi view mở drawer chi tiết (lưu id để refresh xong
   // drawer tự hiện dữ liệu mới); nút "Sửa chi tiết" trong drawer mới mở form.
-  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(initialTaskId ?? null);
+  // Deep-link khi ĐANG ở /tasks (command palette push ?task=... không remount):
+  // prop đổi → mở drawer, cùng pattern "adjust state during render" phía trên.
+  const [prevInitialTaskId, setPrevInitialTaskId] = useState(initialTaskId);
+  if (prevInitialTaskId !== initialTaskId) {
+    setPrevInitialTaskId(initialTaskId);
+    if (initialTaskId) setDetailId(initialTaskId);
+  }
+  const [prevInitialNew, setPrevInitialNew] = useState(initialNew);
+  if (prevInitialNew !== initialNew) {
+    setPrevInitialNew(initialNew);
+    if (initialNew) setForm({ open: true, task: null });
+  }
   const detailTask = detailId
     ? (tasks.find((t) => t.id === detailId) ?? null)
     : null;

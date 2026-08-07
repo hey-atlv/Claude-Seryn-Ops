@@ -107,6 +107,7 @@ export async function getTodayData(now: Date = new Date()): Promise<TodayData> {
     leaderName: t.leader?.name ?? null,
     deadline: t.deadline ? t.deadline.toISOString() : null,
     priority: t.priority,
+    status: t.status,
     alertStatus: t.alertStatus,
   }));
 

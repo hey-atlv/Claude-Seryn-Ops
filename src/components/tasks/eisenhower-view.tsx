@@ -6,6 +6,7 @@ import {
   QUADRANTS,
   type Quadrant,
 } from "@/lib/eisenhower";
+import { TitleWithTag } from "./tag-chip";
 import type { TaskRow } from "@/lib/task-row";
 import { formatVN } from "@/lib/timezone";
 
@@ -104,7 +105,7 @@ export function EisenhowerView({ tasks, onEdit }: EisenhowerViewProps) {
                     className="flex w-full items-center gap-2 rounded-md border border-zinc-200 px-2 py-1.5 text-left text-xs hover:border-brand-500 hover:bg-brand-50/40 dark:border-zinc-700 dark:hover:bg-brand-950/30"
                   >
                     <span className="min-w-0 flex-1 truncate font-medium text-zinc-900 dark:text-zinc-100">
-                      {t.title}
+                      <TitleWithTag title={t.title} />
                     </span>
                     {t.deadline && (
                       <span

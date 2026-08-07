@@ -16,6 +16,8 @@ export default async function TasksPage({
       data={data}
       initialView={typeof sp.view === "string" ? sp.view : undefined}
       initialTeam={typeof sp.team === "string" ? sp.team : undefined}
+      initialTaskId={typeof sp.task === "string" ? sp.task : undefined}
+      initialNew={sp.new === "1"}
     />
   );
 }

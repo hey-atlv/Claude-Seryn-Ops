@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { TEAM_LABELS, type Team } from "@/lib/constants";
+import { TitleWithTag } from "./tag-chip";
 import type { TaskRow } from "@/lib/task-row";
 import { formatVN } from "@/lib/timezone";
 
@@ -183,7 +184,7 @@ export function PeopleView({ tasks, onOpen }: PeopleViewProps) {
                         className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800"
                       >
                         <span className="min-w-0 flex-1 truncate text-zinc-800 dark:text-zinc-200">
-                          {t.title}
+                          <TitleWithTag title={t.title} />
                         </span>
                         {t.deadline && (
                           <span

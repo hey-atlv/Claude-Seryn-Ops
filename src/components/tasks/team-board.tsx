@@ -19,6 +19,7 @@ import {
   type Team,
 } from "@/lib/constants";
 import { canHide } from "@/lib/task-hidden";
+import { TitleWithTag } from "./tag-chip";
 import type { TaskRow } from "@/lib/task-row";
 import { formatVN } from "@/lib/timezone";
 import { patchTask } from "./task-api";
@@ -92,7 +93,7 @@ function BoardCard({
           }`}
         >
           {task.type === "PROJECT" && "🗂 "}
-          {task.title}
+          <TitleWithTag title={task.title} />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-zinc-500">
           {task.priority === "CRITICAL" && <span>🔴 Critical</span>}

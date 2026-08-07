@@ -6,6 +6,7 @@ import { TEAM_LABELS, type Team } from "@/lib/constants";
 import type { TaskRow } from "@/lib/task-row";
 import { formatVN } from "@/lib/timezone";
 import { patchTask } from "./task-api";
+import { TitleWithTag } from "./tag-chip";
 
 // P1-a — Drawer chi tiết task: click task ở mọi view mở drawer này (xem trước,
 // sửa sau) thay vì nhảy thẳng vào form. Update tiến độ nhanh ngay tại chỗ.
@@ -117,7 +118,7 @@ export function TaskDetailDrawer({
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold leading-snug text-zinc-900 dark:text-zinc-50">
               {task.type === "PROJECT" ? "🗂 " : ""}
-              {task.title}
+              <TitleWithTag title={task.title} />
             </h2>
             <p className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-zinc-500">
               <span>{TEAM_LABELS[task.team as Team] ?? task.team}</span>

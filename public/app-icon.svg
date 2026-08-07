@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Icon PWA Seryn Ops — nền tối khớp theme, chữ S vàng gold -->
+  <rect width="512" height="512" rx="96" fill="#131315"/>
+  <circle cx="256" cy="256" r="176" fill="none" stroke="#c9b184" stroke-width="14" opacity="0.35"/>
+  <text x="256" y="330" font-family="Georgia, 'Times New Roman', serif" font-size="240" font-weight="bold" fill="#c9b184" text-anchor="middle">S</text>
+</svg>

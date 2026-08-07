@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { QuickUpdate } from "@/components/tasks/quick-update";
 import { patchTask } from "@/components/tasks/task-api";
+import { TitleWithTag } from "@/components/tasks/tag-chip";
 import type { TodayTaskRow } from "@/lib/today-row";
 import { formatVN } from "@/lib/timezone";
 
@@ -46,20 +47,21 @@ function avatarColor(name: string): string {
   return AVATAR_BG[sum % AVATAR_BG.length];
 }
 
-function Row({ task }: { task: TodayTaskRow }) {
+function Row({
+  task,
+  onDone,
+}: {
+  task: TodayTaskRow;
+  onDone: (task: TodayTaskRow) => Promise<void>;
+}) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const tone = toneOf(task);
 
   async function markDone() {
     setSaving(true);
-    const res = await patchTask(task.id, { status: "DONE" });
+    await onDone(task);
     setSaving(false);
-    if (!res.success) {
-      window.alert(`Không chốt xong được: ${res.error}`);
-      return;
-    }
-    router.refresh();
   }
 
   return (
@@ -74,7 +76,7 @@ function Row({ task }: { task: TodayTaskRow }) {
         {BADGE_LABEL[tone]}
       </span>
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-text">
-        {task.title}
+        <TitleWithTag title={task.title} />
       </span>
       {task.leaderName && (
         <span className="flex flex-none items-center gap-1.5 text-xs text-dim">
@@ -114,19 +116,67 @@ function Row({ task }: { task: TodayTaskRow }) {
   );
 }
 
+const UNDO_MS = 6000;
+
 export function TodayList({ tasks }: { tasks: TodayTaskRow[] }) {
-  if (tasks.length === 0) {
-    return (
-      <p className="rounded-[11px] border border-dashed border-hair px-4 py-5 text-center text-sm text-faint">
-        Không có việc gấp hôm nay 🎉
-      </p>
+  const router = useRouter();
+  // P2 — toast Undo sau khi Chốt xong: bấm nhầm thì trả về đúng trạng thái cũ
+  const [undo, setUndo] = useState<{
+    id: string;
+    title: string;
+    prevStatus: string;
+  } | null>(null);
+
+  async function markDone(task: TodayTaskRow) {
+    const res = await patchTask(task.id, { status: "DONE" });
+    if (!res.success) {
+      window.alert(`Không chốt xong được: ${res.error}`);
+      return;
+    }
+    setUndo({ id: task.id, title: task.title, prevStatus: task.status });
+    window.setTimeout(
+      () => setUndo((u) => (u?.id === task.id ? null : u)),
+      UNDO_MS,
     );
+    router.refresh();
   }
+
+  async function undoDone() {
+    if (!undo) return;
+    const res = await patchTask(undo.id, { status: undo.prevStatus });
+    setUndo(null);
+    if (!res.success) {
+      window.alert(`Hoàn tác thất bại: ${res.error}`);
+      return;
+    }
+    router.refresh();
+  }
+
   return (
-    <ul className="flex flex-col gap-2.5">
-      {tasks.map((t) => (
-        <Row key={t.id} task={t} />
-      ))}
-    </ul>
+    <>
+      {tasks.length === 0 ? (
+        <p className="rounded-[11px] border border-dashed border-hair px-4 py-5 text-center text-sm text-faint">
+          Không có việc gấp hôm nay 🎉
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {tasks.map((t) => (
+            <Row key={t.id} task={t} onDone={markDone} />
+          ))}
+        </ul>
+      )}
+      {undo && (
+        <div className="fixed bottom-5 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-hair bg-panel px-4 py-2.5 text-sm text-text shadow-elevated">
+          <span className="max-w-64 truncate">✅ Đã chốt xong: {undo.title}</span>
+          <button
+            type="button"
+            onClick={undoDone}
+            className="font-semibold text-gold hover:underline"
+          >
+            Hoàn tác
+          </button>
+        </div>
+      )}
+    </>
   );
 }

@@ -19,6 +19,7 @@ interface DepBoardProps {
   deps: DepRow[];
   onEdit: (dep: DepRow) => void;
   onChanged: () => void;
+  onCreate: (partner: string) => void;
 }
 
 function DepCard({
@@ -86,7 +87,7 @@ function DepCard({
   );
 }
 
-export function DepBoard({ deps, onEdit, onChanged }: DepBoardProps) {
+export function DepBoard({ deps, onEdit, onChanged, onCreate }: DepBoardProps) {
   return (
     <div className="grid gap-3 md:grid-cols-3">
       {PARTNERS.map((partner) => {
@@ -106,9 +107,17 @@ export function DepBoard({ deps, onEdit, onChanged }: DepBoardProps) {
                 <DepCard key={d.id} dep={d} onEdit={onEdit} onChanged={onChanged} />
               ))}
               {cards.length === 0 && (
-                <p className="px-1 py-3 text-center text-xs text-zinc-400">
-                  Chưa có phối hợp nào
-                </p>
+                <div className="px-1 py-3 text-center">
+                  <p className="text-xs text-zinc-400">Chưa có phối hợp nào</p>
+                  {/* P2 — empty state có lối đi luôn thay vì ngõ cụt */}
+                  <button
+                    type="button"
+                    onClick={() => onCreate(partner)}
+                    className="mt-1.5 text-xs font-medium text-brand-700 hover:underline dark:text-brand-300"
+                  >
+                    ➕ Tạo phối hợp với {PARTNER_LABELS[partner]}
+                  </button>
+                </div>
               )}
             </div>
           </section>

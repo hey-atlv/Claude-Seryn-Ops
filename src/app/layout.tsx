@@ -5,6 +5,7 @@ import {
   Geist_Mono,
 } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
+import { CommandPalette } from "@/components/command-palette";
 import { FloatingLauncher } from "@/components/floating/floating-launcher";
 import "./globals.css";
 
@@ -59,6 +60,7 @@ export default function RootLayout({
           <div className="min-w-0 flex-1">{children}</div>
         </div>
         <FloatingLauncher />
+        <CommandPalette />
       </body>
     </html>
   );

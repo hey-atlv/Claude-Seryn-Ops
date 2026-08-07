@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, currentMonthVN, dateKeyVN } from "@/lib/calendar-core";
 import { TEAM_LABELS, type Team } from "@/lib/constants";
+import { TitleWithTag } from "./tag-chip";
 import type { TaskRow } from "@/lib/task-row";
 import {
   buildTimelineRows,
@@ -113,7 +114,7 @@ function groupWeeks(days: TimelineDay[]): WeekGroup[] {
  * thành một đường liền xuyên bảng; đầu tuần ăn vạch xám để mắt bắt được nhịp tuần.
  */
 function dayEdge(day: TimelineDay, index: number, isToday: boolean): string {
-  if (isToday) return "border-l border-gold/55";
+  if (isToday) return "border-l-2 border-gold/80";
   if (day.weekday === 1 && index > 0) return "border-l border-hair";
   return "";
 }
@@ -244,7 +245,7 @@ function TimelineRowLine({
           )}
           <span className="truncate">
             {task.type === "PROJECT" && "🗂 "}
-            {task.title}
+            <TitleWithTag title={task.title} />
           </span>
         </button>
         <p className="mt-0.5 truncate text-[10px] text-faint">

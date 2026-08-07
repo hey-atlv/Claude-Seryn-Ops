@@ -17,6 +17,7 @@ export interface TodayTaskRow {
   leaderName: string | null;
   deadline: string | null;
   priority: string;
+  status: string; // P2 — de undo "Chot xong" tra ve dung trang thai cu
   alertStatus: AlertStatus;
 }
 
