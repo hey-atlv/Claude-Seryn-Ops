@@ -48,6 +48,7 @@ interface FormState {
   leaderId: string;
   category: string;
   status: string;
+  startDateDate: string; // "yyyy-MM-dd" theo lịch VN — mốc bắt đầu ở view Dòng thời gian
   deadlineDate: string; // "yyyy-MM-dd" theo lịch VN
   priority: string;
   revenueImpact: string;
@@ -92,6 +93,7 @@ function initialState(
       leaderId: leaders.find((l) => l.team === team)?.id ?? "",
       category,
       status: "TODO",
+      startDateDate: "",
       deadlineDate: initial?.deadlineDate ?? "",
       priority,
       revenueImpact: "MEDIUM",
@@ -106,6 +108,9 @@ function initialState(
     leaderId: task.leaderId ?? "",
     category: task.category ?? "",
     status: task.status,
+    startDateDate: task.startDate
+      ? formatVN(new Date(task.startDate), "yyyy-MM-dd")
+      : "",
     deadlineDate: task.deadline
       ? formatVN(new Date(task.deadline), "yyyy-MM-dd")
       : "",
@@ -119,6 +124,9 @@ function initialState(
 // Deadline lưu cuối ngày theo giờ VN (23:59:59 +07) — khớp daysUntilVN và ô calendar
 const deadlineIso = (d: string) =>
   d ? new Date(`${d}T23:59:59+07:00`).toISOString() : null;
+// Ngày bắt đầu lưu đầu ngày VN (00:00 +07) — thanh Dòng thời gian phủ trọn ngày đó
+const startIso = (d: string) =>
+  d ? new Date(`${d}T00:00:00+07:00`).toISOString() : null;
 
 export function TaskForm({
   task,
@@ -189,6 +197,7 @@ export function TaskForm({
       leaderId: form.leaderId || null,
       category: form.category || null,
       status: form.status,
+      startDate: startIso(form.startDateDate),
       deadline: deadlineIso(form.deadlineDate),
       priority: form.priority,
       revenueImpact: form.revenueImpact,
@@ -403,10 +412,21 @@ export function TaskForm({
               ))}
             </select>
           </Field>
+          <Field label="Ngày bắt đầu (giờ VN)">
+            <input
+              type="date"
+              value={form.startDateDate}
+              max={form.deadlineDate || undefined}
+              onChange={(e) => set("startDateDate", e.target.value)}
+              title="Để trống thì view Dòng thời gian lùi về ngày tạo task"
+              className={INPUT}
+            />
+          </Field>
           <Field label="Deadline (giờ VN)">
             <input
               type="date"
               value={form.deadlineDate}
+              min={form.startDateDate || undefined}
               onChange={(e) => set("deadlineDate", e.target.value)}
               className={INPUT}
             />

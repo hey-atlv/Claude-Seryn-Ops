@@ -84,6 +84,7 @@ const taskShape = z.object({
   leaderId: nullableStr(50),
   category: nullableStr(100),
   status: z.enum(TASK_STATUSES).default("TODO"),
+  startDate: nullableDate,
   deadline: nullableDate,
   priority: z.enum(PRIORITIES).default("NORMAL"),
   revenueImpact: z.enum(REVENUE_IMPACTS).default("MEDIUM"),

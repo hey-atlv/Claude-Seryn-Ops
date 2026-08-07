@@ -36,6 +36,7 @@ function toTaskRow(
     leaderName: task.leader ? leaderLabel(task.leader) : null,
     category: task.category,
     status: task.status,
+    startDate: iso(task.startDate),
     deadline: iso(task.deadline),
     priority: task.priority,
     revenueImpact: task.revenueImpact,

@@ -33,6 +33,7 @@ model Task {
   leader         Leader?   @relation(fields: [leaderId], references: [id])
   category       String? // Nhóm việc — validate theo CATEGORY_BY_TEAM
   status         String    @default("TODO") // TODO | IN_PROGRESS | REVIEW | DONE
+  startDate      DateTime? // Ngày bắt đầu theo kế hoạch — vẽ thanh ở view Dòng thời gian
   deadline       DateTime?
   priority       String    @default("NORMAL") // NORMAL | HIGH | CRITICAL
   revenueImpact  String    @default("MEDIUM") // HIGH | MEDIUM | LOW

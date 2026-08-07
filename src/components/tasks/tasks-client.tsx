@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CalendarDays,
+  ChartGantt,
   Columns3,
   EyeOff,
   FileDown,
@@ -21,15 +22,17 @@ import { HiddenTasksDialog } from "./hidden-tasks-dialog";
 import { patchTask } from "./task-api";
 import { TaskForm } from "./task-form";
 import { TeamBoard } from "./team-board";
+import { TimelineView } from "./timeline-view";
 
-// Trang /tasks còn 3 views (phương án 15 phút): Ma trận (mặc định) ·
-// Theo Team · Calendar. Các ?view= cũ (priority/today/alerts/silent/projects)
+// Trang /tasks có 4 views: Ma trận (mặc định) · Theo Team · Calendar ·
+// Dòng thời gian. Các ?view= cũ (priority/today/alerts/silent/projects)
 // tự rơi về Ma trận — không 404.
 
 const VIEWS = [
   { key: "matrix", label: "Ma trận", icon: Grid2x2 },
   { key: "team", label: "Theo Team", icon: Columns3 },
   { key: "calendar", label: "Calendar", icon: CalendarDays },
+  { key: "timeline", label: "Dòng thời gian", icon: ChartGantt },
 ] as const;
 type ViewKey = (typeof VIEWS)[number]["key"];
 
@@ -224,6 +227,7 @@ export function TasksClient({ data, initialView, initialTeam }: TasksClientProps
           onCreateFromEvent={openCreateFromEvent}
         />
       )}
+      {view === "timeline" && <TimelineView tasks={visible} onEdit={openEdit} />}
 
       {hiddenOpen && (
         <HiddenTasksDialog

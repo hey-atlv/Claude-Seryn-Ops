@@ -19,6 +19,7 @@ export interface TaskRow {
   leaderName: string | null;
   category: string | null;
   status: string;
+  startDate: string | null; // ngày bắt đầu theo kế hoạch; null = chưa điền
   deadline: string | null;
   priority: string;
   revenueImpact: string;
