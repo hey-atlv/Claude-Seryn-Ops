@@ -125,6 +125,38 @@ export function TasksClient({ data, initialView, initialTeam, initialTaskId, ini
   const onStatusChange = (id: string, status: TaskStatus) =>
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
 
+  // P2 — Gantt kéo-thả: dời deadline (và ngày bắt đầu nếu có) theo số ngày
+  // kéo. Optimistic để thanh nhảy ngay; API hỏng thì trả về vị trí cũ.
+  const shiftTaskDates = (t: TaskRow, deltaDays: number) => {
+    if (!t.deadline || deltaDays === 0) return;
+    const ms = deltaDays * 86_400_000;
+    const shiftIso = (iso: string) =>
+      new Date(new Date(iso).getTime() + ms).toISOString();
+    const newDeadline = shiftIso(t.deadline);
+    const newStart = t.startDate ? shiftIso(t.startDate) : null;
+    const prev = { deadline: t.deadline, startDate: t.startDate };
+    setTasks((cur) =>
+      cur.map((x) =>
+        x.id === t.id
+          ? { ...x, deadline: newDeadline, startDate: newStart ?? x.startDate }
+          : x,
+      ),
+    );
+    patchTask(t.id, {
+      deadline: newDeadline,
+      ...(newStart ? { startDate: newStart } : {}),
+    }).then((res) => {
+      if (!res.success) {
+        setTasks((cur) =>
+          cur.map((x) => (x.id === t.id ? { ...x, ...prev } : x)),
+        );
+        window.alert(`Dời lịch thất bại: ${res.error}`);
+        return;
+      }
+      refresh();
+    });
+  };
+
   const setHiddenAt = (id: string, hiddenAt: string | null) =>
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, hiddenAt } : t)));
 
@@ -243,7 +275,7 @@ export function TasksClient({ data, initialView, initialTeam, initialTaskId, ini
       {view === "matrix" && (
         <div className="space-y-5">
           {/* Toàn cảnh tháng trước, rồi mới tới việc phải xử lý hôm nay */}
-          <TimelineView tasks={visible} onEdit={openDetail} />
+          <TimelineView tasks={visible} onEdit={openDetail} onShift={shiftTaskDates} />
           <EisenhowerView tasks={openTasks} onEdit={openDetail} />
         </div>
       )}

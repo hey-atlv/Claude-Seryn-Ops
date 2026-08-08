@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, currentMonthVN, dateKeyVN } from "@/lib/calendar-core";
 import { TEAM_LABELS, type Team } from "@/lib/constants";
@@ -33,6 +33,8 @@ const LABEL_SLOT_MIN = 4;
 interface TimelineViewProps {
   tasks: TaskRow[];
   onEdit: (task: TaskRow) => void;
+  /** Kéo ngang thanh N ngày → dời deadline (và ngày bắt đầu nếu có) */
+  onShift: (task: TaskRow, deltaDays: number) => void;
 }
 
 // ── Tông màu theo cảnh báo tiến độ ────────────────────────────────
@@ -209,12 +211,14 @@ function TimelineRowLine({
   days,
   todayKey,
   onEdit,
+  onShift,
 }: {
   row: TimelineRow;
   columns: string;
   days: TimelineDay[];
   todayKey: string;
   onEdit: (task: TaskRow) => void;
+  onShift: (task: TaskRow, deltaDays: number) => void;
 }) {
   const { task, bar } = row;
   const tone = TONES[toneOf(task)];
@@ -223,6 +227,54 @@ function TimelineRowLine({
   const label =
     shortDay(bar.endKey) +
     (row.progressPct > 0 && row.progressPct < 100 ? ` · ${row.progressPct}%` : "");
+
+  // P2 — kéo ngang thanh để dời lịch: snap từng nấc 1 ngày, thả là PATCH.
+  // Click thường (không kéo) vẫn mở drawer — suppressClick chặn click sau kéo.
+  const [dragPx, setDragPx] = useState(0);
+  const dragRef = useRef<{ startX: number; dayW: number; delta: number } | null>(
+    null,
+  );
+  const suppressClick = useRef(false);
+  const canDrag = task.status !== "DONE" && task.deadline !== null;
+
+  function onBarPointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    if (!canDrag || e.button !== 0) return;
+    const gridW =
+      e.currentTarget.parentElement?.getBoundingClientRect().width ?? 0;
+    if (gridW === 0) return;
+    dragRef.current = { startX: e.clientX, dayW: gridW / days.length, delta: 0 };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onBarPointerMove(e: React.PointerEvent<HTMLButtonElement>) {
+    const d = dragRef.current;
+    if (!d) return;
+    const delta = Math.round((e.clientX - d.startX) / d.dayW);
+    if (delta !== d.delta) {
+      d.delta = delta;
+      setDragPx(delta * d.dayW);
+    }
+  }
+
+  function onBarPointerUp() {
+    const d = dragRef.current;
+    dragRef.current = null;
+    setDragPx(0);
+    if (d && d.delta !== 0) {
+      // Click theo sau drag (nếu trình duyệt bắn) bị chặn; kéo xong mà không
+      // có click nào theo sau thì tự nhả cờ để click kế tiếp mở drawer bình thường
+      suppressClick.current = true;
+      window.setTimeout(() => {
+        suppressClick.current = false;
+      }, 0);
+      onShift(task, d.delta);
+    }
+  }
+
+  function onBarPointerCancel() {
+    dragRef.current = null;
+    setDragPx(0);
+  }
 
   return (
     <div className="group flex border-b border-hair-soft last:border-b-0">
@@ -263,12 +315,31 @@ function TimelineRowLine({
         >
           <button
             type="button"
-            onClick={() => onEdit(task)}
-            title={barTitle(row)}
-            style={{ gridRow: 1, gridColumn: `${bar.startIndex + 1} / span ${span}` }}
+            onClick={() => {
+              if (suppressClick.current) {
+                suppressClick.current = false;
+                return;
+              }
+              onEdit(task);
+            }}
+            onPointerDown={onBarPointerDown}
+            onPointerMove={onBarPointerMove}
+            onPointerUp={onBarPointerUp}
+            onPointerCancel={onBarPointerCancel}
+            title={
+              barTitle(row) + (canDrag ? "\n↔ Kéo ngang để dời lịch" : "")
+            }
+            style={{
+              gridRow: 1,
+              gridColumn: `${bar.startIndex + 1} / span ${span}`,
+              transform: dragPx !== 0 ? `translateX(${dragPx}px)` : undefined,
+              touchAction: canDrag ? "none" : undefined,
+            }}
             className={`h-6 overflow-hidden ring-1 ring-inset transition-shadow hover:ring-ink/35 ${tone.track} ${tone.ring} ${
               bar.clippedStart ? "rounded-l-none" : "rounded-l-full"
-            } ${bar.clippedEnd ? "rounded-r-none" : "rounded-r-full"}`}
+            } ${bar.clippedEnd ? "rounded-r-none" : "rounded-r-full"} ${
+              canDrag ? "cursor-grab active:cursor-grabbing" : ""
+            } ${dragPx !== 0 ? "z-30 ring-2 ring-gold/60" : ""}`}
           >
             <span
               className={`block h-full ${tone.fill} ${
@@ -298,7 +369,7 @@ function TimelineRowLine({
 
 // ── View ──────────────────────────────────────────────────────────
 
-export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
+export function TimelineView({ tasks, onEdit, onShift }: TimelineViewProps) {
   const [{ year, month }, setYm] = useState(() => currentMonthVN());
   const [importantOnly, setImportantOnly] = useState(true);
 
@@ -482,6 +553,7 @@ export function TimelineView({ tasks, onEdit }: TimelineViewProps) {
                 days={days}
                 todayKey={todayKey}
                 onEdit={onEdit}
+                onShift={onShift}
               />
             ))}
           </div>
